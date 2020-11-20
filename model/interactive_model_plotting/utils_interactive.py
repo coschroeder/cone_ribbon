@@ -62,6 +62,59 @@ def normalize_specific(data, target_max=0.4, target_min=-0.08):
     data += target_min - np.min(data)
     return data
 
+"""
+defining addition stim to ca kernel
+"""
+
+def cone_kernel(scale=1):
+    """
+    PR biphasic kernel
+    :param scale: time scale 
+    :return: normalized kernel with dt=1ms
+    # adapted from https://github.com/coschroeder/abc-ribbon/blob/master/standalone_model/ribbonv2.py
+    """
+    # all variables in sec
+    dt = 0.032
+    t = np.arange(0,0.3,dt)
+
+    tau_r = 0.07 * scale 
+    tau_d = 0.07 *scale 
+    phi = -np.pi * 0.2 * scale 
+    tau_phase = 100
+    kernel = -(t/tau_r)**3 / (1+t/tau_r) * np.exp(-(t/tau_d)**2) * np.cos(2*np.pi*t / phi + tau_phase)
+    return kernel/ np.max(np.abs(kernel)) 
+
+def ca_to_ca_kernel():
+    dt = 0.032 #sec
+    t = np.arange(0,2,dt)
+    
+    tau_rise = 0.03 #sec
+    tau_decay = 2*0.755 # radius dependent: radius*0.755 sec/um
+    kernel = (1-np.exp(-t/(tau_rise)) )* np.exp(-t/tau_decay)
+    
+    return kernel/np.max(kernel)
+
+
+def ca_simulation(stimulus_raw):
+    
+    # add tpts for more stable convolution
+    tpts_to_add = 100
+    stimulus = np.hstack([np.ones(tpts_to_add)*stimulus_raw[0],stimulus_raw])
+    
+    # get kernels
+    ca_kernel1 = cone_kernel()
+    ca_kernel2 = ca_to_ca_kernel()
+    
+    # process "receptore impulse response"
+    ca1 = np.convolve(ca_kernel1, stimulus,mode='full')[:len(stimulus)]
+    # non-linearity
+    ca1= -1/np.exp(ca1)
+    
+    # ca current to ca concentration
+    ca2 = np.convolve(ca_kernel2, ca1,mode='full')[:len(stimulus)]
+    
+    return ca2[tpts_to_add:len(stimulus_raw)+tpts_to_add]
+
 
 """
 define stimulus
@@ -82,7 +135,7 @@ def get_flash_stim(len_flash, len_low, len_high, max_amp,len_adapt, amp_adapt, d
     while bound1<len(t):
         bound0 = low_tpts*i + high_tpts*i #+ low_tpts
         bound1 = low_tpts*i + high_tpts*(i+1) #+ low_tpts
-        x[bound0:bound1] = max_amp
+        x[bound0+low_tpts:bound1+low_tpts] = max_amp
         i+=1
               
     # stack adatation time
@@ -177,7 +230,7 @@ def get_sliders():
                                       min=0.05,
                                       max=1,
                                     step=0.05,
-                                    description='Stimulus Frequency:',
+                                    description='Stimulus Frequency [Hz]:',
                                     disabled=False,
                                     continuous_update=False,
                                             style=style)
@@ -212,20 +265,18 @@ def get_stimulus_choice(stimulus_mode, freq):
             len_low = 3 # sec
             len_high = 3 # sec 
             len_adapt = 10
-            amp_adapt = 0.2
+            amp_adapt = 0.9
             stimulus,t =  get_flash_stim(len_flash, len_low, len_high, max_amp, len_adapt, amp_adapt,)
-            stimulus = normalize_specific(stimulus)
 
         elif stimulus_mode==2:
-            # High frequency
+            # flashes
             len_flash = 58#  sec
             max_amp= 1
             len_low = 1/freq # sec
             len_high = 1/freq # sec 
             len_adapt = 10
-            amp_adapt = 0.2
+            amp_adapt = 0.9
             stimulus,t =  get_flash_stim(len_flash, len_low, len_high, max_amp, len_adapt, amp_adapt,)
-            stimulus = normalize_specific(stimulus)
 
 
         elif stimulus_mode==3:
@@ -270,7 +321,9 @@ class Ribbon_Plot():
         stimulus,t = get_stimulus_choice(stimulus_mode, freq)
         
         # simulate calcium concentration
-        ca_concentration = stimulus
+        ca_concentration = ca_simulation(stimulus)
+        ca_concentration = normalize_specific(ca_concentration, target_max=1) # target_max=0.4, target_min=-0.08
+
 
         # get all parameters
         params_standardized = get_all_params(RRP_size, IP_size, max_release)
@@ -326,6 +379,7 @@ class Ribbon_Plot():
 
         ax2 = plt.subplot(312)
         self.fig1.add_axes(ax2)
+        self.fig1.axes[1].set_xticklabels([])
         #ax2.set_xlabel('sec')
         ax2.set_ylabel('Ca Concentration \n [a.u.]')
         
