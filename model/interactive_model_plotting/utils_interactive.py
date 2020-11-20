@@ -268,16 +268,17 @@ class Ribbon_Plot():
        
         # get stimulus
         stimulus,t = get_stimulus_choice(stimulus_mode, freq)
+        
+        # simulate calcium concentration
+        ca_concentration = stimulus
 
         # get all parameters
         params_standardized = get_all_params(RRP_size, IP_size, max_release)
         # run simulation
-        simulation = solve_ribbon_ode(stimulus, *params_standardized)
+        simulation = solve_ribbon_ode(ca_concentration, *params_standardized)
 
         # plotting
         sns.set_context('notebook')
-        
-        
         
         # set up figure
         if not track_changes:
@@ -298,10 +299,13 @@ class Ribbon_Plot():
         # simulation
         self.fig1.axes[0].plot(t,simulation, color=color)
 
+        # Ca 
+        self.fig1.axes[1].plot(t,ca_concentration, color=color)
+        
         # stimulus
         stimulus -= np.min(stimulus)
         stimulus /= np.max(stimulus)
-        self.fig1.axes[1].plot(t,stimulus, color=color)
+        self.fig1.axes[2].plot(t,stimulus, color=color)
         
         
         if track_changes and self.i>1:
@@ -312,21 +316,26 @@ class Ribbon_Plot():
             
     def set_new_fig(self):
  
-        self.fig1 = plt.figure(1, figsize=(8,6))
-        ax1 = plt.subplot(211)
+        self.fig1 = plt.figure(1, figsize=(10,8))
+        ax1 = plt.subplot(311)
         self.fig1.add_axes(ax1)
         ax1.set_ylim(-0.1,5)
         self.fig1.axes[0].set_xticklabels([])
         ax1.set_ylabel('Glutamate Release Rate \n [ves.u./sec.]')
 
 
-        ax2 = plt.subplot(212)
+        ax2 = plt.subplot(312)
         self.fig1.add_axes(ax2)
-        ax2.set_xlabel('sec')
-        ax2.set_ylabel('"Stimulus" \n (Ca Concentration) [a.u.]')
-        #self.fig1.axes[1].text(70,0.2,'Step duration: \n%.2f sec'%len_high)
-        sns.despine()
+        #ax2.set_xlabel('sec')
+        ax2.set_ylabel('Ca Concentration \n [a.u.]')
         
+        ax3 = plt.subplot(313)
+        self.fig1.add_axes(ax3)
+        ax3.set_xlabel('sec')
+        ax3.set_ylabel('Stimulus \n [normalized]')
+        
+        sns.despine()
+        plt.tight_layout()        
 
 
     def clearplot_button_click(self,b):
