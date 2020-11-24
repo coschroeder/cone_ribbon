@@ -82,7 +82,7 @@ def cone_kernel(scale=1):
     phi = -np.pi * 0.2 * scale 
     tau_phase = 100
     kernel = -(t/tau_r)**3 / (1+t/tau_r) * np.exp(-(t/tau_d)**2) * np.cos(2*np.pi*t / phi + tau_phase)
-    return kernel/ np.max(np.abs(kernel)) 
+    return kernel/ np.abs(np.sum(kernel)) 
 
 def ca_to_ca_kernel():
     dt = 0.032 #sec
@@ -92,7 +92,7 @@ def ca_to_ca_kernel():
     tau_decay = 2*0.755 # radius dependent: radius*0.755 sec/um
     kernel = (1-np.exp(-t/(tau_rise)) )* np.exp(-t/tau_decay)
     
-    return kernel/np.max(kernel)
+    return kernel/np.sum(kernel)
 
 
 def ca_simulation(stimulus_raw):
@@ -108,7 +108,7 @@ def ca_simulation(stimulus_raw):
     # process "receptore impulse response"
     ca1 = np.convolve(ca_kernel1, stimulus,mode='full')[:len(stimulus)]
     # non-linearity
-    ca1= -1/np.exp(ca1)
+    ca1= np.exp(2*ca1)
     
     # ca current to ca concentration
     ca2 = np.convolve(ca_kernel2, ca1,mode='full')[:len(stimulus)]
@@ -227,9 +227,9 @@ def get_sliders():
                                         )
     
     stim_freq_slider = widgets.FloatSlider(value=0.5,
-                                      min=0.05,
-                                      max=1,
-                                    step=0.05,
+                                      min=0.1,
+                                      max=2,
+                                    step=0.1,
                                     description='Stimulus Frequency [Hz]:',
                                     disabled=False,
                                     continuous_update=False,
@@ -265,7 +265,7 @@ def get_stimulus_choice(stimulus_mode, freq):
             len_low = 3 # sec
             len_high = 3 # sec 
             len_adapt = 10
-            amp_adapt = 0.9
+            amp_adapt = 0.5
             stimulus,t =  get_flash_stim(len_flash, len_low, len_high, max_amp, len_adapt, amp_adapt,)
 
         elif stimulus_mode==2:
@@ -275,7 +275,7 @@ def get_stimulus_choice(stimulus_mode, freq):
             len_low = 1/freq # sec
             len_high = 1/freq # sec 
             len_adapt = 10
-            amp_adapt = 0.9
+            amp_adapt = 0.5
             stimulus,t =  get_flash_stim(len_flash, len_low, len_high, max_amp, len_adapt, amp_adapt,)
 
 
@@ -284,7 +284,7 @@ def get_stimulus_choice(stimulus_mode, freq):
             len_stim = 58 #sec
             f = freq # frequency
             len_adapt = 10
-            amp_adapt = -0.5 # will be normalized later 
+            amp_adapt = 0 # will be normalized later 
 
             t = np.arange(0,len_stim,0.032)
             stimulus = np.sin(2*np.pi*(t-len_adapt) * f)
@@ -296,7 +296,7 @@ def get_stimulus_choice(stimulus_mode, freq):
             len_stim = 58 #sec
             tpts_per_value = int((1/freq) / 0.032) 
             len_adapt = 10
-            amp_adapt = 0.2
+            amp_adapt = 0.5
 
             t = np.arange(0,len_stim,0.032)
             stimulus = produce_white_noise(len(t),steplen=tpts_per_value)
@@ -322,13 +322,13 @@ class Ribbon_Plot():
         
         # simulate calcium concentration
         ca_concentration = ca_simulation(stimulus)
-        ca_concentration = normalize_specific(ca_concentration, target_max=1) # target_max=0.4, target_min=-0.08
+        ca_concentration_norm = normalize_specific(ca_concentration, target_max=1) # target_max=0.4, target_min=-0.08
 
 
         # get all parameters
         params_standardized = get_all_params(RRP_size, IP_size, max_release)
         # run simulation
-        simulation = solve_ribbon_ode(ca_concentration, *params_standardized)
+        simulation = solve_ribbon_ode(ca_concentration_norm, *params_standardized)
 
         # plotting
         sns.set_context('notebook')
@@ -369,21 +369,22 @@ class Ribbon_Plot():
             
     def set_new_fig(self):
  
-        self.fig1 = plt.figure(1, figsize=(10,8))
-        ax1 = plt.subplot(311)
+        self.fig1 = plt.figure(1, figsize=(10,6))
+        #ax1 = plt.subplot(311)
+        ax1 = plt.subplot2grid((4,1),(0,0), rowspan=2)
         self.fig1.add_axes(ax1)
         ax1.set_ylim(-0.1,5)
         self.fig1.axes[0].set_xticklabels([])
         ax1.set_ylabel('Glutamate Release Rate \n [ves.u./sec.]')
 
 
-        ax2 = plt.subplot(312)
+        ax2 = plt.subplot2grid((4,1),(2,0), rowspan=1)
         self.fig1.add_axes(ax2)
         self.fig1.axes[1].set_xticklabels([])
         #ax2.set_xlabel('sec')
         ax2.set_ylabel('Ca Concentration \n [a.u.]')
         
-        ax3 = plt.subplot(313)
+        ax3 = plt.subplot2grid((4,1),(3,0), rowspan=1)
         self.fig1.add_axes(ax3)
         ax3.set_xlabel('sec')
         ax3.set_ylabel('Stimulus \n [normalized]')
