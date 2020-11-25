@@ -7,6 +7,9 @@ from IPython.display import display
 import ipywidgets as widgets
 from ipywidgets import (interact, interactive )
 
+from ipywidgets import GridspecLayout
+
+
 
 # import model
 import sys
@@ -243,7 +246,7 @@ def get_sliders():
                                       min=0.05,
                                       max=3,
                                     step=0.05,
-                                    description='Tau(ca-kernel):',
+                                    description='Ca kernel (tau):',
                                     disabled=False,
                                     continuous_update=False,
                                             style=style)
@@ -432,7 +435,7 @@ class Ribbon_Plot():
     def set_new_fig(self):
         layout = (4,6) #nrows, ncolumns
             
-        self.fig1 = plt.figure(1, figsize=(20,7.5))
+        self.fig1 = plt.figure(1, figsize=(30,7.5))
         
         # ax0-2 simulation
         ax0 = plt.subplot2grid(layout,(0,0), rowspan=2,colspan=4)
@@ -589,9 +592,24 @@ class Ribbon_Plot():
 
 
         # reshape layout. use the interactive function instead of interact
-        controls = widgets.HBox(plot_widgets.children[:-1], layout = widgets.Layout(flex_flow='row wrap'))
+                
+        grid = GridspecLayout(3, 3)
+        # ribbon 
+        grid[0, 0] = plot_widgets.children[0]
+        grid[1, 0] = plot_widgets.children[1]
+        grid[2, 0] = plot_widgets.children[2]
+
+        # stimulus 
+        grid[0, 1] = plot_widgets.children[3] 
+        grid[1, 1] = plot_widgets.children[4]
+
+        # rest 
+        grid[0, 2] = plot_widgets.children[5]
+        grid[2, 2] = plot_widgets.children[6]
+        
+        #controls = widgets.HBox(plot_widgets.children[:-1], layout = widgets.Layout(flex_flow='row wrap'))
         output = plot_widgets.children[-1]
-        display(widgets.VBox([controls, output, clearplot_button]))
+        display(widgets.VBox([grid, output, clearplot_button]))
                
         clearplot_button.on_click(self.clearplot_button_click)
 
