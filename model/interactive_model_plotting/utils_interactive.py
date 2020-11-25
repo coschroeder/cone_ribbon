@@ -422,7 +422,8 @@ def plot_ca_kernel(ax, tau_decay,titlesize):
     
     
 class Ribbon_Plot():
-    def __init__(self):
+    def __init__(self, figsize=(30,8)):
+        self.figsize=figsize
         self.titlesize=15
         self.i = 0
         # set up initial figure
@@ -435,7 +436,7 @@ class Ribbon_Plot():
     def set_new_fig(self):
         layout = (4,6) #nrows, ncolumns
             
-        self.fig1 = plt.figure(1, figsize=(30,7.5))
+        self.fig1 = plt.figure(1, figsize=self.figsize)
         
         # ax0-2 simulation
         ax0 = plt.subplot2grid(layout,(0,0), rowspan=2,colspan=4)
