@@ -304,6 +304,94 @@ def get_stimulus_choice(stimulus_mode, freq):
         
         return stimulus,t
     
+"""
+plot of a ribbon comic
+"""
+def plot_ribbon_schema(ax, n_RRP,n_IP):
+    """
+    plots a comic of the ribbon
+    """
+    #sns.set_context('talk')
+
+    ax.set_title('Ribbon schema')
+    
+    r=0.1 #radius of vesicles
+    ves_dist = 2.4 #  distance between vesicles (*r)
+    
+    # compute height and width
+    # assume constant vesicle densities at the ribbon
+    
+    # set to int
+    n_IP /=2
+    n_IP = max(1,int(np.round(n_IP)))
+    n_RRP = max(1,int(np.round(n_RRP)))
+
+    width = n_RRP*r*ves_dist
+    height= n_IP*r*ves_dist
+    
+    # set up figure
+    #fig=plt.figure(1,figsize=(6,6))
+    #ax = plt.gca()
+   
+    # keep plot quadratic  
+    ax.set_xlim(-2,4)
+    ax.set_ylim(0,4)
+
+    
+
+    ### plot ribbon
+    ribboncolor = 'goldenrod'
+    xy=(0,0.1+2*r)
+    
+    box= mpl.patches.Rectangle(xy,width,height,
+                               joinstyle= 'round',
+                               fill=True,
+                               #color='gold',
+                               edgecolor='black',
+                               lw=1,
+                               facecolor=ribboncolor
+                              )
+    ax.add_patch(box)
+
+    
+    ## vesicles
+    vesicles_args = dict(edgecolor='black', 
+                         lw=2,
+                         radius=r)
+
+    # add vesicles IP
+    for i in range(n_IP):
+        xyv=(xy[0]-0.1, xy[1]+(i+1)*(ves_dist*r))
+        v = mpl.patches.Circle(xyv,facecolor='white', **vesicles_args)
+        ax.add_patch(v)
+        
+    for i in range(n_IP):
+        xyv=(xy[0]+width+0.1, xy[1]+(i+1)*(ves_dist*r))
+        v = mpl.patches.Circle(xyv,facecolor='white',**vesicles_args)
+        ax.add_patch(v)
+
+
+    # add vesicles RRP
+    for i in range(n_RRP):
+        xyv=(xy[0]+i*r*ves_dist, xy[1]-r)
+        v = mpl.patches.Circle(xyv,facecolor='grey', **vesicles_args)
+        ax.add_patch(v)
+
+
+    # plot membrane 
+    ax.axhline(0, color='black',lw=3)
+
+    # add text 
+    ax.text(-2,-0.3,'Membrane')
+    ax.text(xy[0],height+0.5,'Ribbon',color=ribboncolor)
+    ax.text(width+4*r,0.15,'RRP',color='grey')
+    ax.text(width+4*r,height+2*r,'IP',color='black')
+
+
+
+    ax.axis('off')
+    #return fig
+    
     
     
     
@@ -361,6 +449,9 @@ class Ribbon_Plot():
         self.fig1.axes[2].plot(t,stimulus, color=color)
         
         
+        # plot ribbon schema
+        plot_ribbon_schema(self.fig1.axes[3],RRP_size,IP_size)
+        
         if track_changes and self.i>1:
             display(self.fig1)
             
@@ -369,25 +460,31 @@ class Ribbon_Plot():
             
     def set_new_fig(self):
  
-        self.fig1 = plt.figure(1, figsize=(10,6))
+        self.fig1 = plt.figure(1, figsize=(10,7.5))
         #ax1 = plt.subplot(311)
-        ax1 = plt.subplot2grid((4,1),(0,0), rowspan=2)
+        ax1 = plt.subplot2grid((4,3),(0,0), rowspan=2,colspan=2)
         self.fig1.add_axes(ax1)
         ax1.set_ylim(-0.1,5)
         self.fig1.axes[0].set_xticklabels([])
         ax1.set_ylabel('Glutamate Release Rate \n [ves.u./sec.]')
+        
+        ax1.set_title('Simulation of Vesicle Release')
 
-
-        ax2 = plt.subplot2grid((4,1),(2,0), rowspan=1)
+        ax2 = plt.subplot2grid((4,3),(2,0), rowspan=1,colspan=2)
         self.fig1.add_axes(ax2)
         self.fig1.axes[1].set_xticklabels([])
         #ax2.set_xlabel('sec')
         ax2.set_ylabel('Ca Concentration \n [a.u.]')
         
-        ax3 = plt.subplot2grid((4,1),(3,0), rowspan=1)
+        ax3 = plt.subplot2grid((4,3),(3,0), rowspan=1,colspan=2)
         self.fig1.add_axes(ax3)
         ax3.set_xlabel('sec')
         ax3.set_ylabel('Stimulus \n [normalized]')
+        
+        ax4 = plt.subplot2grid((4,3),(0,2), rowspan=2,colspan=1)
+        self.fig1.add_axes(ax4)
+        #ax3.set_xlabel('sec')
+        #ax3.set_ylabel('Stimulus \n [normalized]')
         
         sns.despine()
         plt.tight_layout()        
