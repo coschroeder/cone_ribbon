@@ -247,7 +247,7 @@ def get_sliders():
                                                    ('Steps', 2), 
                                                     ('Sine', 3),
                                                  ('Noise', 4),
-                                                 ('"Chirp"',5)],
+                                                 ('Chirp',5)],
                                             value=1,
                                             description='Stimulus:',
                                         style=style,
@@ -655,7 +655,7 @@ class Ribbon_Plot():
         # stimulus 
         grid[0, 1] = plot_widgets.children[3] 
         grid[1, 1] = plot_widgets.children[4]
-        grid[2, 1] = widgets.Label(value="Frequency only valid for certain stimuli.")
+        grid[2, 1] = widgets.Label(value="Frequency slider is only valid for certain stimuli.")
         
         # rest 
         grid[0, 2] = plot_widgets.children[5]
