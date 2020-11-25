@@ -326,7 +326,7 @@ def plot_ribbon_schema(ax, n_RRP,n_IP, titlesize):
     n_IP = max(1,int(np.round(n_IP)))
     n_RRP = max(1,int(np.round(n_RRP)))
 
-    width = n_RRP*r*ves_dist
+    width = (n_RRP-1)*r*ves_dist 
     height= n_IP*r*ves_dist
     
     # set up figure
