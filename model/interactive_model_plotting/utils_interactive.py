@@ -315,6 +315,9 @@ def plot_ribbon_schema(ax, n_RRP,n_IP, titlesize):
     ax.set_title('Ribbon schema',fontsize=titlesize)
     #sns.set_context('talk')
     
+    # clear axes
+    ax.clear()
+    
     r=0.1 #radius of vesicles
     ves_dist = 2.4 #  distance between vesicles (*r)
     
@@ -436,7 +439,7 @@ class Ribbon_Plot():
         
         # actual plotting:
         # set color
-        norm = mpl.colors.Normalize(vmin=0, vmax=5) # 5 values
+        norm = mpl.colors.Normalize(vmin=-3, vmax=5) # 7 values but use only 5
         cmap = mpl.cm.ScalarMappable(norm=norm, cmap=mpl.cm.Blues)
         cmap.set_array([])
         color=cmap.to_rgba(self.i)
@@ -496,7 +499,6 @@ class Ribbon_Plot():
         
         ax5 = plt.subplot2grid((4,3),(2,2), rowspan=2,colspan=1)
         
-
         sns.despine()
         plt.tight_layout()        
 
@@ -506,6 +508,7 @@ class Ribbon_Plot():
         mpl.use("Agg")  # Prevent showing stuff
         self.set_new_fig()
         mpl.use(backend_) # Reset backend
+
 
     
     
