@@ -84,18 +84,21 @@ def cone_kernel(scale=1):
     kernel = -(t/tau_r)**3 / (1+t/tau_r) * np.exp(-(t/tau_d)**2) * np.cos(2*np.pi*t / phi + tau_phase)
     return kernel/ np.abs(np.sum(kernel)) 
 
-def ca_to_ca_kernel():
-    dt = 0.032 #sec
-    t = np.arange(0,2,dt)
+def ca_to_ca_kernel(tau_decay , dt=0.032):
+    """
+    dt in sec
+    tau_decay default: 1.5 [sec]
+    """
+    t = np.arange(0,3,dt)
     
     tau_rise = 0.03 #sec
-    tau_decay = 2*0.755 # radius dependent: radius*0.755 sec/um
+    #tau_decay = 2*0.755 # radius dependent: radius*0.755 sec/um
     kernel = (1-np.exp(-t/(tau_rise)) )* np.exp(-t/tau_decay)
     
-    return kernel/np.sum(kernel)
+    return kernel/np.sum(kernel), t
 
 
-def ca_simulation(stimulus_raw):
+def ca_simulation(stimulus_raw, tau_decay):
     
     # add tpts for more stable convolution
     tpts_to_add = 100
@@ -103,7 +106,7 @@ def ca_simulation(stimulus_raw):
     
     # get kernels
     ca_kernel1 = cone_kernel()
-    ca_kernel2 = ca_to_ca_kernel()
+    ca_kernel2, t_kernel = ca_to_ca_kernel(tau_decay)
     
     # process "receptore impulse response"
     ca1 = np.convolve(ca_kernel1, stimulus,mode='full')[:len(stimulus)]
@@ -188,7 +191,7 @@ def get_sliders():
 
     RRP_slider = widgets.FloatSlider(value=4,
                                       min=0.2,
-                                      max=8.0,
+                                      max=10.0,
                                       step=0.2,
                                       description='RRP Size:',
                                     disabled=False,
@@ -226,11 +229,21 @@ def get_sliders():
                                         #layout=Layout
                                         )
     
-    stim_freq_slider = widgets.FloatSlider(value=0.5,
+    stim_freq_slider = widgets.FloatSlider(value=0.6,
                                       min=0.1,
-                                      max=2,
+                                      max=10,
                                     step=0.1,
                                     description='Stimulus Frequency [Hz]:',
+                                    disabled=False,
+                                    continuous_update=False,
+                                            style=style)
+    
+    
+    tau_decay_slider = widgets.FloatSlider(value=1.5,
+                                      min=0.05,
+                                      max=3,
+                                    step=0.05,
+                                    description='Tau(ca-kernel):',
                                     disabled=False,
                                     continuous_update=False,
                                             style=style)
@@ -253,7 +266,7 @@ def get_sliders():
 
 
     
-    return RRP_slider, IP_slider, max_release_slider, stimulus_dropdown,stim_freq_slider, trackplot_checkbox, clearplot_button
+    return RRP_slider, IP_slider, max_release_slider, stimulus_dropdown,stim_freq_slider, trackplot_checkbox,tau_decay_slider, clearplot_button
 
     
 def get_stimulus_choice(stimulus_mode, freq):
@@ -311,12 +324,12 @@ def plot_ribbon_schema(ax, n_RRP,n_IP, titlesize):
     """
     plots a comic of the ribbon
     """
-    
+    ax.clear()
+
     ax.set_title('Ribbon schema',fontsize=titlesize)
     #sns.set_context('talk')
     
     # clear axes
-    ax.clear()
     
     r=0.1 #radius of vesicles
     ves_dist = 2.4 #  distance between vesicles (*r)
@@ -390,12 +403,19 @@ def plot_ribbon_schema(ax, n_RRP,n_IP, titlesize):
     ax.text(width+4*r,0.15,'RRP',color='grey')
     ax.text(width+4*r,height+2*r,'IP',color='black')
 
-
-
     ax.axis('off')
     #return fig
-    
-    
+
+def plot_ca_kernel(ax, tau_decay,titlesize):
+    ax.clear()
+    ax.set_title('Ca kernel', fontsize=titlesize)
+    ax.set_xlabel('sec')
+    ax.set_ylabel('a.u.')
+    ax.set_yticks([0,1])
+    ax.set_xticks([0,1,2,3])
+    ca_kernel, t_kernel = ca_to_ca_kernel(tau_decay,dt=0.001)
+    ax.plot(t_kernel,ca_kernel/np.max(ca_kernel), color='red')       
+
     
     
 class Ribbon_Plot():
@@ -409,13 +429,72 @@ class Ribbon_Plot():
         mpl.use(backend_) # Reset backend        
         
         
-    def plot_ribbon(self, RRP_size, IP_size, max_release, stimulus_mode,freq, track_changes=False):
+    def set_new_fig(self):
+        layout = (4,6) #nrows, ncolumns
+            
+        self.fig1 = plt.figure(1, figsize=(20,7.5))
+        
+        # ax0-2 simulation
+        ax0 = plt.subplot2grid(layout,(0,0), rowspan=2,colspan=4)
+        ylims_glut = (-0.1,5)
+        self.fig1.add_axes(ax0)
+        ax0.set_ylim(ylims_glut)
+        self.fig1.axes[0].set_xticklabels([])
+        ax0.set_ylabel('Glutamate Release Rate \n [ves.u./sec.]')
+        ax0.set_title('Simulation of Vesicle Release', fontsize=self.titlesize)
+
+        ax1 = plt.subplot2grid(layout,(2,0), rowspan=1,colspan=4)
+        ax1.set_xticklabels([])
+        ax1.set_ylabel('Ca Concentration \n [a.u.]')
+        self.fig1.add_axes(ax1)
+
+        
+        ax2 = plt.subplot2grid(layout,(3,0), rowspan=1,colspan=4)
+        self.fig1.add_axes(ax2)
+        ax2.set_xlabel('sec')
+        ax2.set_ylabel('Stimulus \n [normalized]')
+        
+        
+        # for zoom in 
+        ax3 = plt.subplot2grid(layout,(0,4), rowspan=2,colspan=1)
+        ax3.set_title('Zoom in', fontsize=self.titlesize)
+        ax3.set_ylim(ylims_glut)
+        ax3.set_xticklabels([])
+        self.fig1.add_axes(ax3)
+        ax4 = plt.subplot2grid(layout,(2,4), rowspan=1,colspan=1)
+        ax4.set_xticklabels([])
+        self.fig1.add_axes(ax4)
+        ax5 = plt.subplot2grid(layout,(3,4), rowspan=1,colspan=1)
+        ax5.set_xlabel('sec')
+        self.fig1.add_axes(ax5)
+        
+        # ribbon comic
+        ax6 = plt.subplot2grid(layout,(0,5), rowspan=2,colspan=1)
+        #ax6.set_title('Ribbon schema', fontsize=self.titlesize)
+        self.fig1.add_axes(ax6)
+        #ax3.set_xlabel('sec')
+        #ax3.set_ylabel('Stimulus \n [normalized]')
+        
+        # for text
+        ax7 = plt.subplot2grid(layout,(2,5), rowspan=1,colspan=1)
+        self.fig1.add_axes(ax7)
+        
+        # for Ca kernel
+        ax8 = plt.subplot2grid(layout,(3,5), rowspan=1,colspan=1)
+        self.fig1.add_axes(ax8)
+        
+        sns.despine()
+        plt.tight_layout()        
+        
+        
+        
+    def plot_ribbon(self, RRP_size, IP_size, max_release, stimulus_mode,freq,tau_decay, track_changes=False):
        
         # get stimulus
         stimulus,t = get_stimulus_choice(stimulus_mode, freq)
         
         # simulate calcium concentration
-        ca_concentration = ca_simulation(stimulus)
+        ca_concentration = ca_simulation(stimulus, tau_decay)
         ca_concentration_norm = normalize_specific(ca_concentration, target_max=1) # target_max=0.4, target_min=-0.08
 
 
@@ -455,66 +534,46 @@ class Ribbon_Plot():
         self.fig1.axes[2].plot(t,stimulus, color=color)
         
         
+        # plot zoom ins
+        xlims = (16,22)
+        # simulation
+        self.fig1.axes[3].plot(t,simulation, color=color)
+        self.fig1.axes[3].set_xlim(xlims)
+        
+        # Ca 
+        self.fig1.axes[4].plot(t,ca_concentration, color=color)
+        self.fig1.axes[4].set_xlim(xlims)
+        
+        # stimulus
+        self.fig1.axes[5].plot(t,stimulus, color=color)
+        self.fig1.axes[5].set_xlim(xlims)
+        
         # plot ribbon schema
-        plot_ribbon_schema(self.fig1.axes[3],RRP_size,IP_size,titlesize=self.titlesize)
+        plot_ribbon_schema(self.fig1.axes[6],RRP_size,IP_size,titlesize=self.titlesize)
         
         # plot some text
-        self.fig1.axes[4].text(0,0.7, 'This is a simplified ribbon schema \nwhich assumes constant vesicle density \nat the ribbon. \nThis is not necessarily the case.')
-        self.fig1.axes[4].axis('off')
-
+        self.fig1.axes[7].text(0,0.5, 'This is a simplified ribbon schema \nwhich assumes constant vesicle density \nat the ribbon. \nThis is not necessarily the case.')
+        self.fig1.axes[7].axis('off')
+        
+        
+        # plot Ca kernel
+        plot_ca_kernel(self.fig1.axes[8], tau_decay, self.titlesize)
+        
         if track_changes and self.i>1:
             display(self.fig1)
             
-        
-            
-            
-    def set_new_fig(self):
- 
-        self.fig1 = plt.figure(1, figsize=(10,7.5))
-        #ax1 = plt.subplot(311)
-        ax1 = plt.subplot2grid((4,3),(0,0), rowspan=2,colspan=2)
-        self.fig1.add_axes(ax1)
-        ax1.set_ylim(-0.1,5)
-        self.fig1.axes[0].set_xticklabels([])
-        ax1.set_ylabel('Glutamate Release Rate \n [ves.u./sec.]')
-        
-        ax1.set_title('Simulation of Vesicle Release', fontsize=self.titlesize)
-
-        ax2 = plt.subplot2grid((4,3),(2,0), rowspan=1,colspan=2)
-        self.fig1.add_axes(ax2)
-        self.fig1.axes[1].set_xticklabels([])
-        #ax2.set_xlabel('sec')
-        ax2.set_ylabel('Ca Concentration \n [a.u.]')
-        
-        ax3 = plt.subplot2grid((4,3),(3,0), rowspan=1,colspan=2)
-        self.fig1.add_axes(ax3)
-        ax3.set_xlabel('sec')
-        ax3.set_ylabel('Stimulus \n [normalized]')
-        
-        ax4 = plt.subplot2grid((4,3),(0,2), rowspan=2,colspan=1)
-        self.fig1.add_axes(ax4)
-        #ax3.set_xlabel('sec')
-        #ax3.set_ylabel('Stimulus \n [normalized]')
-        
-        
-        ax5 = plt.subplot2grid((4,3),(2,2), rowspan=2,colspan=1)
-        
-        sns.despine()
-        plt.tight_layout()        
-
 
     def clearplot_button_click(self,b):
         backend_ =  mpl.get_backend() 
         mpl.use("Agg")  # Prevent showing stuff
         self.set_new_fig()
         mpl.use(backend_) # Reset backend
+        self.i=0
 
 
-    
-    
     def plot_interactive_ribbon(self):
         
-        RRP_slider, IP_slider, max_release_slider, stimulus_dropdown,stim_freq_slider,trackplot_checkbox, clearplot_button = get_sliders()
+        RRP_slider, IP_slider, max_release_slider, stimulus_dropdown,stim_freq_slider,trackplot_checkbox,tau_decay_slider, clearplot_button = get_sliders()
     
         # create interactive plot
 
@@ -524,7 +583,8 @@ class Ribbon_Plot():
                            max_release = max_release_slider, 
                            stimulus_mode=stimulus_dropdown,
                             freq = stim_freq_slider,
-                          track_changes = trackplot_checkbox)
+                            tau_decay = tau_decay_slider,
+                            track_changes = trackplot_checkbox)
 
 
 
