@@ -29,6 +29,7 @@ def get_all_params(RRP_size, IP_size, max_release):
     ---
     these are educated hand picked parameter combination guesses
     """
+        
     standardized_params = np.zeros(7)
 
     # RRP_size
@@ -69,7 +70,7 @@ def normalize_specific(data, target_max=0.4, target_min=-0.08):
 defining addition stim to ca kernel
 """
 
-def cone_kernel(scale=1):
+def cone_kernel(scale=1, dt=0.032):
     """
     PR biphasic kernel
     :param scale: time scale 
@@ -77,7 +78,7 @@ def cone_kernel(scale=1):
     # adapted from https://github.com/coschroeder/abc-ribbon/blob/master/standalone_model/ribbonv2.py
     """
     # all variables in sec
-    dt = 0.032
+    #dt = 0.032
     t = np.arange(0,0.3,dt)
 
     tau_r = 0.07 * scale 
@@ -101,15 +102,15 @@ def ca_to_ca_kernel(tau_decay , dt=0.032):
     return kernel/np.sum(kernel), t
 
 
-def ca_simulation(stimulus_raw, tau_decay):
+def ca_simulation(stimulus_raw, tau_decay, dt=0.032):
     
     # add tpts for more stable convolution
-    tpts_to_add = 100
+    tpts_to_add = int(5/dt) #corresponding to 5 sec
     stimulus = np.hstack([np.ones(tpts_to_add)*stimulus_raw[0],stimulus_raw])
     
     # get kernels
-    ca_kernel1 = cone_kernel()
-    ca_kernel2, t_kernel = ca_to_ca_kernel(tau_decay)
+    ca_kernel1 = cone_kernel(dt=dt)
+    ca_kernel2, t_kernel = ca_to_ca_kernel(tau_decay,dt=dt)
     
     # process "receptore impulse response"
     ca1 = np.convolve(ca_kernel1, stimulus,mode='full')[:len(stimulus)]
@@ -129,10 +130,11 @@ define stimulus
 def get_flash_stim(len_flash, len_low, len_high, max_amp,len_adapt, amp_adapt, dt=0.032):
     """
     all values in sec
-    len_tot: total time without adaptation time (which is given in negative times)
     """
     t = np.arange(len_adapt, len_flash+len_adapt, dt) # in sec
     x = np.zeros(len(t))
+    
+    
     low_tpts =int(len_low/dt)
     high_tpts =int(len_high/dt)
     
@@ -143,6 +145,25 @@ def get_flash_stim(len_flash, len_low, len_high, max_amp,len_adapt, amp_adapt, d
         bound1 = low_tpts*i + high_tpts*(i+1) #+ low_tpts
         x[bound0+low_tpts:bound1+low_tpts] = max_amp
         i+=1
+              
+    # stack adatation time
+    t2 = np.arange(0,len_adapt, dt)
+    t = np.hstack([t2,  t])
+    x = np.hstack([np.ones(len(t2))*amp_adapt,  x])
+
+    return x, t
+
+
+
+def get_periodic_flash_stim(len_flash, freq, max_amp, len_adapt, amp_adapt, dt=0.032):
+    """
+    all values in sec
+    """
+    t = np.arange(len_adapt, len_flash+len_adapt, dt) # in sec
+    x = np.sin(2*np.pi*(t-len_adapt)*freq)
+    
+    x[x>=0]=0
+    x[x<0]=1
               
     # stack adatation time
     t2 = np.arange(0,len_adapt, dt)
@@ -225,7 +246,8 @@ def get_sliders():
     stimulus_dropdown = widgets.Dropdown(options=[('Fixed Step', 1), 
                                                    ('Steps', 2), 
                                                     ('Sine', 3),
-                                                 ('Noise', 4)],
+                                                 ('Noise', 4),
+                                                 ('"Chirp"',5)],
                                             value=1,
                                             description='Stimulus:',
                                         style=style,
@@ -257,6 +279,16 @@ def get_sliders():
                         description='Track changes',
                         disabled=False)
     
+    time_resolution_ms_slider = widgets.IntSlider(value=32,
+                                      min=2,
+                                      max=32,
+                                    step=2,
+                                    description='Time resulution [ms]:',
+                                    disabled=False,
+                                    continuous_update=False,
+                                            style=style)
+    
+    
     # clear plot button
     clearplot_button = widgets.Button(description='Clear plot',
                                         disabled=False,
@@ -269,30 +301,27 @@ def get_sliders():
 
 
     
-    return RRP_slider, IP_slider, max_release_slider, stimulus_dropdown,stim_freq_slider, trackplot_checkbox,tau_decay_slider, clearplot_button
+    return RRP_slider, IP_slider, max_release_slider, stimulus_dropdown,stim_freq_slider, trackplot_checkbox,tau_decay_slider,time_resolution_ms_slider, clearplot_button
 
     
-def get_stimulus_choice(stimulus_mode, freq):
+def get_stimulus_choice(stimulus_mode, freq, dt):
      # choose stimulus
         if stimulus_mode==1:
             # flash stimulus "original as in paper"
             len_flash = 58#  sec
             max_amp= 1
-            len_low = 3 # sec
-            len_high = 3 # sec 
+            freq=1/6
             len_adapt = 10
             amp_adapt = 0.5
-            stimulus,t =  get_flash_stim(len_flash, len_low, len_high, max_amp, len_adapt, amp_adapt,)
+            stimulus,t =  get_periodic_flash_stim(len_flash, freq, max_amp, len_adapt, amp_adapt,dt)
 
         elif stimulus_mode==2:
             # flashes
             len_flash = 58#  sec
             max_amp= 1
-            len_low = 1/freq # sec
-            len_high = 1/freq # sec 
             len_adapt = 10
             amp_adapt = 0.5
-            stimulus,t =  get_flash_stim(len_flash, len_low, len_high, max_amp, len_adapt, amp_adapt,)
+            stimulus,t =  get_periodic_flash_stim(len_flash, freq, max_amp, len_adapt, amp_adapt,dt)
 
 
         elif stimulus_mode==3:
@@ -302,20 +331,35 @@ def get_stimulus_choice(stimulus_mode, freq):
             len_adapt = 10
             amp_adapt = 0 # will be normalized later 
 
-            t = np.arange(0,len_stim,0.032)
-            stimulus = np.sin(2*np.pi*(t-len_adapt) * f)
+            t = np.arange(0,len_stim,dt)
+            stimulus = -np.sin(2*np.pi*(t-len_adapt) * f)
             stimulus[t<len_adapt] = amp_adapt
             
 
         elif stimulus_mode==4:
             # noise stimulus
             len_stim = 58 #sec
-            tpts_per_value = int((1/freq) / 0.032) 
+            tpts_per_value = int((1/freq) / dt) 
             len_adapt = 10
             amp_adapt = 0.5
 
-            t = np.arange(0,len_stim,0.032)
+            t = np.arange(0,len_stim,dt)
             stimulus = produce_white_noise(len(t),steplen=tpts_per_value)
+            stimulus[t<len_adapt] = amp_adapt
+            
+        elif stimulus_mode==5:
+            # accelerating sine
+            len_stim = 58 #sec
+            f_start = 0.1  # frequency to start
+            f_end = 5
+            
+            len_adapt = 10
+            amp_adapt = 0 # will be normalized later 
+
+            t = np.arange(0,len_stim,dt)
+            f = np.linspace(f_start,f_end,num=len(t[t>len_adapt]))
+            stimulus = np.zeros(len(t))
+            stimulus[t>len_adapt] = -np.sin(2*np.pi*(t[t>len_adapt]-len_adapt) * f)
             stimulus[t<len_adapt] = amp_adapt
         
         return stimulus,t
@@ -426,6 +470,7 @@ class Ribbon_Plot():
         self.figsize=figsize
         self.titlesize=15
         self.i = 0
+        self.dt=0.032
         # set up initial figure
         backend_ =  mpl.get_backend() 
         mpl.use("Agg")  # Prevent showing stuff
@@ -497,20 +542,21 @@ class Ribbon_Plot():
         
         
         
-    def plot_ribbon(self, RRP_size, IP_size, max_release, stimulus_mode,freq,tau_decay, track_changes=False):
-       
+    def plot_ribbon(self, RRP_size, IP_size, max_release, stimulus_mode,freq,tau_decay,time_resolution_ms, track_changes=False):
+        self.dt = time_resolution_ms/1000 # change to sec
+        
         # get stimulus
-        stimulus,t = get_stimulus_choice(stimulus_mode, freq)
+        stimulus,t = get_stimulus_choice(stimulus_mode, freq,dt=self.dt)
         
         # simulate calcium concentration
-        ca_concentration = ca_simulation(stimulus, tau_decay)
+        ca_concentration = ca_simulation(stimulus, tau_decay,dt=self.dt)
         ca_concentration_norm = normalize_specific(ca_concentration, target_max=1) # target_max=0.4, target_min=-0.08
 
 
         # get all parameters
         params_standardized = get_all_params(RRP_size, IP_size, max_release)
         # run simulation
-        simulation = solve_ribbon_ode(ca_concentration_norm, *params_standardized)
+        simulation = solve_ribbon_ode(ca_concentration_norm, *params_standardized, dt=self.dt)
 
         # plotting
         sns.set_context('notebook')
@@ -582,7 +628,7 @@ class Ribbon_Plot():
 
     def plot_interactive_ribbon(self):
         
-        RRP_slider, IP_slider, max_release_slider, stimulus_dropdown,stim_freq_slider,trackplot_checkbox,tau_decay_slider, clearplot_button = get_sliders()
+        RRP_slider, IP_slider, max_release_slider, stimulus_dropdown,stim_freq_slider,trackplot_checkbox,tau_decay_slider,time_resolution_ms_slider, clearplot_button = get_sliders()
     
         # create interactive plot
 
@@ -593,6 +639,7 @@ class Ribbon_Plot():
                            stimulus_mode=stimulus_dropdown,
                             freq = stim_freq_slider,
                             tau_decay = tau_decay_slider,
+                            time_resolution_ms=time_resolution_ms_slider,
                             track_changes = trackplot_checkbox)
 
 
@@ -608,10 +655,12 @@ class Ribbon_Plot():
         # stimulus 
         grid[0, 1] = plot_widgets.children[3] 
         grid[1, 1] = plot_widgets.children[4]
-
+        grid[2, 1] = widgets.Label(value="Frequency only valid for certain stimuli.")
+        
         # rest 
         grid[0, 2] = plot_widgets.children[5]
-        grid[2, 2] = plot_widgets.children[6]
+        grid[1, 2] = plot_widgets.children[6]
+        grid[2, 2] = plot_widgets.children[7]
         
         #controls = widgets.HBox(plot_widgets.children[:-1], layout = widgets.Layout(flex_flow='row wrap'))
         output = plot_widgets.children[-1]
