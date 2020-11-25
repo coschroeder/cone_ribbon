@@ -307,13 +307,13 @@ def get_stimulus_choice(stimulus_mode, freq):
 """
 plot of a ribbon comic
 """
-def plot_ribbon_schema(ax, n_RRP,n_IP):
+def plot_ribbon_schema(ax, n_RRP,n_IP, titlesize):
     """
     plots a comic of the ribbon
     """
+    
+    ax.set_title('Ribbon schema',fontsize=titlesize)
     #sns.set_context('talk')
-
-    ax.set_title('Ribbon schema')
     
     r=0.1 #radius of vesicles
     ves_dist = 2.4 #  distance between vesicles (*r)
@@ -397,11 +397,14 @@ def plot_ribbon_schema(ax, n_RRP,n_IP):
     
 class Ribbon_Plot():
     def __init__(self):
+        self.titlesize=15
+        self.i = 0
+        # set up initial figure
         backend_ =  mpl.get_backend() 
         mpl.use("Agg")  # Prevent showing stuff
         self.set_new_fig()
         mpl.use(backend_) # Reset backend        
-        self.i = 0
+        
         
     def plot_ribbon(self, RRP_size, IP_size, max_release, stimulus_mode,freq, track_changes=False):
        
@@ -450,8 +453,12 @@ class Ribbon_Plot():
         
         
         # plot ribbon schema
-        plot_ribbon_schema(self.fig1.axes[3],RRP_size,IP_size)
+        plot_ribbon_schema(self.fig1.axes[3],RRP_size,IP_size,titlesize=self.titlesize)
         
+        # plot some text
+        self.fig1.axes[4].text(0,0.7, 'This is a simplified ribbon schema \nwhich assumes constant vesicle density \nat the ribbon. \nThis is not necessarily the case.')
+        self.fig1.axes[4].axis('off')
+
         if track_changes and self.i>1:
             display(self.fig1)
             
@@ -468,7 +475,7 @@ class Ribbon_Plot():
         self.fig1.axes[0].set_xticklabels([])
         ax1.set_ylabel('Glutamate Release Rate \n [ves.u./sec.]')
         
-        ax1.set_title('Simulation of Vesicle Release')
+        ax1.set_title('Simulation of Vesicle Release', fontsize=self.titlesize)
 
         ax2 = plt.subplot2grid((4,3),(2,0), rowspan=1,colspan=2)
         self.fig1.add_axes(ax2)
@@ -486,6 +493,10 @@ class Ribbon_Plot():
         #ax3.set_xlabel('sec')
         #ax3.set_ylabel('Stimulus \n [normalized]')
         
+        
+        ax5 = plt.subplot2grid((4,3),(2,2), rowspan=2,colspan=1)
+        
+
         sns.despine()
         plt.tight_layout()        
 
