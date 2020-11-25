@@ -463,12 +463,17 @@ class Ribbon_Plot():
         ax3.set_title('Zoom in', fontsize=self.titlesize)
         ax3.set_ylim(ylims_glut)
         ax3.set_xticklabels([])
+        ax3.set_yticklabels([])
+
         self.fig1.add_axes(ax3)
         ax4 = plt.subplot2grid(layout,(2,4), rowspan=1,colspan=1)
         ax4.set_xticklabels([])
+        ax4.set_yticklabels([])
+        
         self.fig1.add_axes(ax4)
         ax5 = plt.subplot2grid(layout,(3,4), rowspan=1,colspan=1)
         ax5.set_xlabel('sec')
+        ax5.set_yticklabels([])
         self.fig1.add_axes(ax5)
         
         # ribbon comic
