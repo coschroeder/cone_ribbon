@@ -288,7 +288,13 @@ def get_sliders():
                                     continuous_update=False,
                                             style=style)
     
-    
+    # execute plot button
+    execute_button = widgets.Button(description='Execute.',
+                                        disabled=False,
+                                        button_style='', # 'success', 'info', 'warning', 'danger' or ''
+                                        tooltip='Executes the simulation the first time.',
+                                        icon='' #check (FontAwesome names without the `fa-` prefix)
+                                        )
     # clear plot button
     clearplot_button = widgets.Button(description='Clear plot',
                                         disabled=False,
@@ -301,7 +307,10 @@ def get_sliders():
 
 
     
-    return RRP_slider, IP_slider, max_release_slider, stimulus_dropdown,stim_freq_slider, trackplot_checkbox,tau_decay_slider,time_resolution_ms_slider, clearplot_button
+    return (RRP_slider, IP_slider, max_release_slider, 
+            stimulus_dropdown, stim_freq_slider, 
+            trackplot_checkbox, tau_decay_slider, time_resolution_ms_slider, 
+            execute_button, clearplot_button)
 
     
 def get_stimulus_choice(stimulus_mode, freq, dt):
@@ -475,8 +484,33 @@ class Ribbon_Plot():
         backend_ =  mpl.get_backend() 
         mpl.use("Agg")  # Prevent showing stuff
         self.set_new_fig()
-        mpl.use(backend_) # Reset backend        
+        mpl.use(backend_) # Reset backend    
+
+        # set sliders
+        (self.RRP_slider, 
+         self.IP_slider, 
+         self.max_release_slider, 
+         self.stimulus_dropdown,
+         self.stim_freq_slider,
+         self.trackplot_checkbox,
+         self.tau_decay_slider,
+         self.time_resolution_ms_slider,
+         self.execute_button,
+         self.clearplot_button) = get_sliders()
         
+        '''
+        # plot first
+        self.plot_ribbon(RRP_size = self.RRP_slider.value, 
+                        IP_size = self.IP_slider.value, 
+                        max_release = self.max_release_slider.value, 
+                        stimulus_mode = self.stimulus_dropdown.value,
+                        freq = self.stim_freq_slider.value,
+                        tau_decay = self.tau_decay_slider.value,
+                        time_resolution_ms = self.time_resolution_ms_slider.value,
+                        track_changes = self.trackplot_checkbox.value)
+
+        display(self.fig1)
+        '''
         
     def set_new_fig(self):
         layout = (4,6) #nrows, ncolumns
@@ -624,23 +658,38 @@ class Ribbon_Plot():
         self.set_new_fig()
         mpl.use(backend_) # Reset backend
         self.i=0
+        
+    def execute_button_click(self,b):
+        backend_ =  mpl.get_backend() 
+        mpl.use("Agg")  # Prevent showing stuff
+
+        self.plot_ribbon(RRP_size = self.RRP_slider.value, 
+                        IP_size = self.IP_slider.value, 
+                        max_release = self.max_release_slider.value, 
+                        stimulus_mode = self.stimulus_dropdown.value,
+                        freq = self.stim_freq_slider.value,
+                        tau_decay = self.tau_decay_slider.value,
+                        time_resolution_ms = self.time_resolution_ms_slider.value,
+                        track_changes = self.trackplot_checkbox.value)
+                
+        mpl.use(backend_) # Reset backend
+        self.i=0
+        display(self.fig1)
 
 
     def plot_interactive_ribbon(self):
-        
-        RRP_slider, IP_slider, max_release_slider, stimulus_dropdown,stim_freq_slider,trackplot_checkbox,tau_decay_slider,time_resolution_ms_slider, clearplot_button = get_sliders()
-    
+            
         # create interactive plot
 
         plot_widgets = interactive(self.plot_ribbon, 
-                           RRP_size = RRP_slider, 
-                           IP_size = IP_slider, 
-                           max_release = max_release_slider, 
-                           stimulus_mode=stimulus_dropdown,
-                            freq = stim_freq_slider,
-                            tau_decay = tau_decay_slider,
-                            time_resolution_ms=time_resolution_ms_slider,
-                            track_changes = trackplot_checkbox)
+                                    RRP_size = self.RRP_slider, 
+                                    IP_size = self.IP_slider, 
+                                    max_release = self.max_release_slider, 
+                                    stimulus_mode = self.stimulus_dropdown,
+                                    freq = self.stim_freq_slider,
+                                    tau_decay = self.tau_decay_slider,
+                                    time_resolution_ms = self.time_resolution_ms_slider,
+                                    track_changes = self.trackplot_checkbox)
 
 
 
@@ -662,10 +711,11 @@ class Ribbon_Plot():
         grid[1, 2] = plot_widgets.children[6]
         grid[2, 2] = plot_widgets.children[7]
         
-        #controls = widgets.HBox(plot_widgets.children[:-1], layout = widgets.Layout(flex_flow='row wrap'))
         output = plot_widgets.children[-1]
-        display(widgets.VBox([grid, output, clearplot_button]))
+        display(widgets.VBox([grid,output,self.clearplot_button]))
                
-        clearplot_button.on_click(self.clearplot_button_click)
+        self.execute_button.on_click(self.execute_button_click)
+        self.clearplot_button.on_click(self.clearplot_button_click)
+
 
     
