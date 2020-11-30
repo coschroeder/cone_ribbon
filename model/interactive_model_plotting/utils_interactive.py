@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import seaborn as sns
 from IPython.display import display
+from IPython.display import clear_output
 
 import ipywidgets as widgets
 from ipywidgets import (interact, interactive )
@@ -302,6 +303,29 @@ def get_sliders():
                                         tooltip='Clears the figure for the next plotting event.',
                                         icon='' #check (FontAwesome names without the `fa-` prefix)
                                         )
+    
+    # define slider for zone specific values
+    az_button = widgets.Button(description='Set to AZ values',
+                                        disabled=False,
+                                        button_style='', # 'success', 'info', 'warning', 'danger' or ''
+                                        tooltip='Set the slider values to AZ fits.',
+                                        icon='' #check (FontAwesome names without the `fa-` prefix)
+                                        )
+        
+    nz_button = widgets.Button(description='Set to N values',
+                                        disabled=False,
+                                        button_style='', # 'success', 'info', 'warning', 'danger' or ''
+                                        tooltip='Set the slider values to nasal fits.',
+                                        icon='' #check (FontAwesome names without the `fa-` prefix)
+                                        )
+    dz_button = widgets.Button(description='Set to D values',
+                                        disabled=False,
+                                        button_style='', # 'success', 'info', 'warning', 'danger' or ''
+                                        tooltip='Set the slider values to dorsal zone fits.',
+                                        icon='' #check (FontAwesome names without the `fa-` prefix)
+                                        )
+    
+
 
 
 
@@ -310,6 +334,7 @@ def get_sliders():
     return (RRP_slider, IP_slider, max_release_slider, 
             stimulus_dropdown, stim_freq_slider, 
             trackplot_checkbox, tau_decay_slider, time_resolution_ms_slider, 
+            az_button, nz_button, dz_button,
             execute_button, clearplot_button)
 
     
@@ -495,11 +520,19 @@ class Ribbon_Plot():
          self.trackplot_checkbox,
          self.tau_decay_slider,
          self.time_resolution_ms_slider,
+         self.az_button,
+         self.nz_button,
+         self.dz_button,
          self.execute_button,
          self.clearplot_button) = get_sliders()
         
+        
+        self.plot_interactive_ribbon()
+        
         '''
         # plot first
+        backend_ =  mpl.get_backend() 
+        mpl.use("Agg")  # Prevent showing stuff
         self.plot_ribbon(RRP_size = self.RRP_slider.value, 
                         IP_size = self.IP_slider.value, 
                         max_release = self.max_release_slider.value, 
@@ -508,9 +541,11 @@ class Ribbon_Plot():
                         tau_decay = self.tau_decay_slider.value,
                         time_resolution_ms = self.time_resolution_ms_slider.value,
                         track_changes = self.trackplot_checkbox.value)
-
-        display(self.fig1)
+        mpl.use(backend_) # Reset backend
+        #display(self.fig1)
         '''
+
+        
         
     def set_new_fig(self):
         layout = (4,6) #nrows, ncolumns
@@ -577,6 +612,8 @@ class Ribbon_Plot():
         
         
     def plot_ribbon(self, RRP_size, IP_size, max_release, stimulus_mode,freq,tau_decay,time_resolution_ms, track_changes=False):
+        backend_ =  mpl.get_backend() 
+        mpl.use("Agg")  # Prevent showing stuff
         self.dt = time_resolution_ms/1000 # change to sec
         
         # get stimulus
@@ -648,9 +685,13 @@ class Ribbon_Plot():
         # plot Ca kernel
         plot_ca_kernel(self.fig1.axes[8], tau_decay, self.titlesize)
         
-        if track_changes and self.i>1:
-            display(self.fig1)
-            
+        
+        mpl.use(backend_) # Reset backend    
+        
+        
+        display(self.fig1)
+        
+        #return fig1
 
     def clearplot_button_click(self,b):
         backend_ =  mpl.get_backend() 
@@ -674,11 +715,28 @@ class Ribbon_Plot():
                 
         mpl.use(backend_) # Reset backend
         self.i=0
-        display(self.fig1)
+        #display(self.fig1)
+    
+    # specify zone buttons
+    def set_az_values(self, b):
+        self.RRP_slider.value = 1
+        self.IP_slider.value = 1
+        self.max_release_slider.value = 1
+        
+    def set_dz_values(self, b):
+        self.RRP_slider.value = 2
+        self.IP_slider.value = 2
+        self.max_release_slider.value = 0.5
+        
+    def set_nz_values(self, b):
+        self.RRP_slider.value = 3
+        self.IP_slider.value = 3
+        self.max_release_slider.value = 0.2
+
 
 
     def plot_interactive_ribbon(self):
-            
+       
         # create interactive plot
 
         plot_widgets = interactive(self.plot_ribbon, 
@@ -695,27 +753,44 @@ class Ribbon_Plot():
 
         # reshape layout. use the interactive function instead of interact
                 
-        grid = GridspecLayout(3, 3)
+        self.grid = GridspecLayout(4, 3)
         # ribbon 
-        grid[0, 0] = plot_widgets.children[0]
-        grid[1, 0] = plot_widgets.children[1]
-        grid[2, 0] = plot_widgets.children[2]
+        self.grid[0, 0] = plot_widgets.children[0]
+        self.grid[1, 0] = plot_widgets.children[1]
+        self.grid[2, 0] = plot_widgets.children[2]
 
         # stimulus 
-        grid[0, 1] = plot_widgets.children[3] 
-        grid[1, 1] = plot_widgets.children[4]
-        grid[2, 1] = widgets.Label(value="Frequency slider is only valid for certain stimuli.")
+        self.grid[0, 1] = plot_widgets.children[3] 
+        self.grid[1, 1] = plot_widgets.children[4]
+        self.grid[2, 1] = widgets.Label(value="Frequency slider is only valid for certain stimuli.")
         
         # rest 
-        grid[0, 2] = plot_widgets.children[5]
-        grid[1, 2] = plot_widgets.children[6]
-        grid[2, 2] = plot_widgets.children[7]
+        self.grid[0, 2] = plot_widgets.children[5]
+        self.grid[1, 2] = plot_widgets.children[6]
+        self.grid[2, 2] = plot_widgets.children[7]
         
-        output = plot_widgets.children[-1]
-        display(widgets.VBox([grid,output,self.clearplot_button]))
+        # set zones
+        self.grid[3, 0] = self.az_button
+        self.grid[3, 1] = self.nz_button
+        self.grid[3, 2] = self.dz_button
+        
+        self.output = plot_widgets.children[-1]
+        #display(widgets.VBox([grid,output,self.clearplot_button]))
+        
+
                
         self.execute_button.on_click(self.execute_button_click)
         self.clearplot_button.on_click(self.clearplot_button_click)
+        
+        # set handlers for zone buttons
+        self.az_button.on_click(self.set_az_values)
+        self.nz_button.on_click(self.set_nz_values)
+        self.dz_button.on_click(self.set_dz_values)
+        
+        output_boxed = widgets.VBox([self.grid,self.output,self.clearplot_button])
+        display(output_boxed)
+        
+        return output_boxed
 
 
     
