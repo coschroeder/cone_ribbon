@@ -55,6 +55,28 @@ def get_all_params(RRP_size, IP_size, max_release):
     
     return standardized_params
 
+# define zone specific parameters
+def get_zone_params(zone):
+    """
+    for zone fits (mean of distributions)
+    zone in ['AZ','N','D']
+    returns: unnormalized params for RRP_size, IP_size, max_release
+    """
+    if zone=='AZ':
+        RRP_size = 5 # rounded(4.9)
+        IP_size = 7.8 # rounded(7.7)
+        max_release = 0.55 # 2.6 = round(0.55*RRP_size)
+    elif zone=='N':
+        RRP_size = 1.0 # rounded(1.04)
+        IP_size = 10.8 # rounded(10.72)
+        max_release = 0.95  # 10.1 = round(0.95*RRP_size)
+    elif zone=='D':
+        RRP_size = 3 #rounded(2.9) 
+        IP_size = 7 # rounded(7.08) 
+        max_release = 0.65 # 2.0 = round(0.65*RRP_size)
+        
+    return RRP_size, IP_size, max_release
+
 # additional scaling of input stimulus 
 # st. the baseline of the non-linearity level matches the Ca level in the data
 def normalize_specific(data, target_max=0.4, target_min=-0.08):
@@ -203,6 +225,7 @@ def produce_white_noise(tpts, std=0.1, seed=1234, steplen=1, dist='uniform'):
     return white_noise
 
 
+
 """
 setting up interactive plotting functions
 """
@@ -265,7 +288,7 @@ def get_sliders():
                                             style=style)
     
     
-    tau_decay_slider = widgets.FloatSlider(value=1.5,
+    tau_decay_slider = widgets.FloatSlider(value=.5,
                                       min=0.05,
                                       max=3,
                                     step=0.05,
@@ -719,20 +742,25 @@ class Ribbon_Plot():
     
     # specify zone buttons
     def set_az_values(self, b):
-        self.RRP_slider.value = 1
-        self.IP_slider.value = 1
-        self.max_release_slider.value = 1
-        
-    def set_dz_values(self, b):
-        self.RRP_slider.value = 2
-        self.IP_slider.value = 2
-        self.max_release_slider.value = 0.5
+        RRP_size, IP_size, max_release = get_zone_params('AZ')
+        self.RRP_slider.value = RRP_size
+        self.IP_slider.value = IP_size
+        self.max_release_slider.value = max_release
+        self.tau_decay_slider = 0.5
         
     def set_nz_values(self, b):
-        self.RRP_slider.value = 3
-        self.IP_slider.value = 3
-        self.max_release_slider.value = 0.2
-
+        RRP_size, IP_size, max_release = get_zone_params('N')
+        self.RRP_slider.value = RRP_size
+        self.IP_slider.value = IP_size
+        self.max_release_slider.value =max_release
+        self.tau_decay_slider = 0.5
+        
+    def set_dz_values(self, b):
+        RRP_size, IP_size, max_release = get_zone_params('D')
+        self.RRP_slider.value = RRP_size
+        self.IP_slider.value = IP_size
+        self.max_release_slider.value = max_release
+        self.tau_decay_slider = 0.5  
 
 
     def plot_interactive_ribbon(self):
