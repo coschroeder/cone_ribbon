@@ -746,21 +746,21 @@ class Ribbon_Plot():
         self.RRP_slider.value = RRP_size
         self.IP_slider.value = IP_size
         self.max_release_slider.value = max_release
-        self.tau_decay_slider = 0.5
+        self.tau_decay_slider.value = 0.5
         
     def set_nz_values(self, b):
         RRP_size, IP_size, max_release = get_zone_params('N')
         self.RRP_slider.value = RRP_size
         self.IP_slider.value = IP_size
         self.max_release_slider.value =max_release
-        self.tau_decay_slider = 0.5
+        self.tau_decay_slider.value = 0.5
         
     def set_dz_values(self, b):
         RRP_size, IP_size, max_release = get_zone_params('D')
         self.RRP_slider.value = RRP_size
         self.IP_slider.value = IP_size
         self.max_release_slider.value = max_release
-        self.tau_decay_slider = 0.5  
+        self.tau_decay_slider.value = 0.5  
 
 
     def plot_interactive_ribbon(self):
