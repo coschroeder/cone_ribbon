@@ -22,7 +22,7 @@ from model_new2020 import solve_ribbon_ode
 setting up a simplified model
 """
 
-def get_all_params(RRP_size, IP_size, max_release):
+def get_all_params(RRP_size, IP_size, max_release, ca_baseline):
     """
     returns all 7 paramters for the ribbon model
     calculates the missing changing rates based on the pool sizes.
@@ -47,7 +47,7 @@ def get_all_params(RRP_size, IP_size, max_release):
 
     #k and x0: mean over the three modes of moG
     standardized_params[3] = 10.2 # np.mean(params_unnorm_mean[:,3])=10.23
-    standardized_params[4] = 0.32 # np.mean(params_unnorm_mean[:,4])=0.317
+    standardized_params[4] = ca_baseline #0.32 # np.mean(params_unnorm_mean[:,4])=0.317
     
     # normalize it
     #boundsnorm = [[0, 5], [0, 5], [0, 20], [2, 30], [0, 1], [-0.5, 10], [-0.5, 5]]
@@ -74,8 +74,10 @@ def get_zone_params(zone):
         RRP_size = 3 #rounded(2.9) 
         IP_size = 7 # rounded(7.08) 
         max_release = 0.65 # 2.0 = round(0.65*RRP_size)
-        
-    return RRP_size, IP_size, max_release
+    
+    # TODO
+    ca_baseline = 0.3 #0.32
+    return RRP_size, IP_size, max_release, ca_baseline
 
 # additional scaling of input stimulus 
 # st. the baseline of the non-linearity level matches the Ca level in the data
@@ -297,6 +299,15 @@ def get_sliders():
                                     continuous_update=False,
                                             style=style)
     
+    ca_baseline_slider = widgets.FloatSlider(value=.3,
+                                      min=-0.2,
+                                      max=1.3,
+                                    step=0.05,
+                                    description='Ca activation baseline [a.u.]:',
+                                    disabled=False,
+                                    continuous_update=False,
+                                            style=style)
+    
     
     # track plot
     trackplot_checkbox = widgets.Checkbox(value=False,
@@ -358,68 +369,71 @@ def get_sliders():
             stimulus_dropdown, stim_freq_slider, 
             trackplot_checkbox, tau_decay_slider, time_resolution_ms_slider, 
             az_button, nz_button, dz_button,
-            execute_button, clearplot_button)
+            execute_button, clearplot_button, ca_baseline_slider)
 
     
 def get_stimulus_choice(stimulus_mode, freq, dt):
+    """
+    stimulus_mode in [1,...,5] corresponding to [original_flashes, flashes, sine, noise, chirp]
+    """
      # choose stimulus
-        if stimulus_mode==1:
-            # flash stimulus "original as in paper"
-            len_flash = 58#  sec
-            max_amp= 1
-            freq=1/6
-            len_adapt = 10
-            amp_adapt = 0.5
-            stimulus,t =  get_periodic_flash_stim(len_flash, freq, max_amp, len_adapt, amp_adapt,dt)
+    if stimulus_mode==1:
+        # flash stimulus "original as in paper"
+        len_flash = 60#  sec
+        max_amp= 1
+        freq=1/6
+        len_adapt = 13.6
+        amp_adapt = 0.5
+        stimulus,t =  get_periodic_flash_stim(len_flash, freq, max_amp, len_adapt, amp_adapt,dt)
 
-        elif stimulus_mode==2:
-            # flashes
-            len_flash = 58#  sec
-            max_amp= 1
-            len_adapt = 10
-            amp_adapt = 0.5
-            stimulus,t =  get_periodic_flash_stim(len_flash, freq, max_amp, len_adapt, amp_adapt,dt)
+    elif stimulus_mode==2:
+        # flashes
+        len_flash = 58#  sec
+        max_amp= 1
+        len_adapt = 10
+        amp_adapt = 0.5
+        stimulus,t =  get_periodic_flash_stim(len_flash, freq, max_amp, len_adapt, amp_adapt,dt)
 
 
-        elif stimulus_mode==3:
-            # sine stimulus
-            len_stim = 58 #sec
-            f = freq # frequency
-            len_adapt = 10
-            amp_adapt = 0 # will be normalized later 
+    elif stimulus_mode==3:
+        # sine stimulus
+        len_stim = 58 #sec
+        f = freq # frequency
+        len_adapt = 10
+        amp_adapt = 0 # will be normalized later 
 
-            t = np.arange(0,len_stim,dt)
-            stimulus = -np.sin(2*np.pi*(t-len_adapt) * f)
-            stimulus[t<len_adapt] = amp_adapt
-            
+        t = np.arange(0,len_stim,dt)
+        stimulus = -np.sin(2*np.pi*(t-len_adapt) * f)
+        stimulus[t<len_adapt] = amp_adapt
 
-        elif stimulus_mode==4:
-            # noise stimulus
-            len_stim = 58 #sec
-            tpts_per_value = int((1/freq) / dt) 
-            len_adapt = 10
-            amp_adapt = 0.5
 
-            t = np.arange(0,len_stim,dt)
-            stimulus = produce_white_noise(len(t),steplen=tpts_per_value)
-            stimulus[t<len_adapt] = amp_adapt
-            
-        elif stimulus_mode==5:
-            # accelerating sine
-            len_stim = 58 #sec
-            f_start = 0.1  # frequency to start
-            f_end = 5
-            
-            len_adapt = 10
-            amp_adapt = 0 # will be normalized later 
+    elif stimulus_mode==4:
+        # noise stimulus
+        len_stim = 58 #sec
+        tpts_per_value = int((1/freq) / dt) 
+        len_adapt = 10
+        amp_adapt = 0.5
 
-            t = np.arange(0,len_stim,dt)
-            f = np.linspace(f_start,f_end,num=len(t[t>len_adapt]))
-            stimulus = np.zeros(len(t))
-            stimulus[t>len_adapt] = -np.sin(2*np.pi*(t[t>len_adapt]-len_adapt) * f)
-            stimulus[t<len_adapt] = amp_adapt
-        
-        return stimulus,t
+        t = np.arange(0,len_stim,dt)
+        stimulus = produce_white_noise(len(t),steplen=tpts_per_value)
+        stimulus[t<len_adapt] = amp_adapt
+
+    elif stimulus_mode==5:
+        # accelerating sine: chirp
+        len_stim = 58 #sec
+        f_start = 0.1  # frequency to start
+        f_end = 5
+
+        len_adapt = 10
+        amp_adapt = 0 # will be normalized later 
+
+        t = np.arange(0,len_stim,dt)
+        f = np.linspace(f_start,f_end,num=len(t[t>len_adapt]))
+        stimulus = np.zeros(len(t))
+        stimulus[t>len_adapt] = -np.sin(2*np.pi*(t[t>len_adapt]-len_adapt) * f)
+        stimulus[t<len_adapt] = amp_adapt
+
+    return stimulus,t
     
 """
 plot of a ribbon comic
@@ -547,7 +561,8 @@ class Ribbon_Plot():
          self.nz_button,
          self.dz_button,
          self.execute_button,
-         self.clearplot_button) = get_sliders()
+         self.clearplot_button,
+         self.ca_baseline_slider) = get_sliders()
         
         
         self.plot_interactive_ribbon()
@@ -634,7 +649,7 @@ class Ribbon_Plot():
         
         
         
-    def plot_ribbon(self, RRP_size, IP_size, max_release, stimulus_mode,freq,tau_decay,time_resolution_ms, track_changes=False):
+    def plot_ribbon(self, RRP_size, IP_size, max_release, stimulus_mode,freq,tau_decay,time_resolution_ms, ca_baseline, track_changes=False):
         backend_ =  mpl.get_backend() 
         mpl.use("Agg")  # Prevent showing stuff
         self.dt = time_resolution_ms/1000 # change to sec
@@ -648,7 +663,7 @@ class Ribbon_Plot():
 
 
         # get all parameters
-        params_standardized = get_all_params(RRP_size, IP_size, max_release)
+        params_standardized = get_all_params(RRP_size, IP_size, max_release,ca_baseline)
         # run simulation
         simulation = solve_ribbon_ode(ca_concentration_norm, *params_standardized, dt=self.dt)
 
@@ -684,7 +699,7 @@ class Ribbon_Plot():
         
         
         # plot zoom ins
-        xlims = (16,22)
+        xlims = (19.6,25.6)
         # simulation
         self.fig1.axes[3].plot(t,simulation, color=color)
         self.fig1.axes[3].set_xlim(xlims)
@@ -742,24 +757,27 @@ class Ribbon_Plot():
     
     # specify zone buttons
     def set_az_values(self, b):
-        RRP_size, IP_size, max_release = get_zone_params('AZ')
+        RRP_size, IP_size, max_release, ca_baseline = get_zone_params('AZ')
         self.RRP_slider.value = RRP_size
         self.IP_slider.value = IP_size
         self.max_release_slider.value = max_release
+        self.ca_baseline_slider.value = ca_baseline
         self.tau_decay_slider.value = 0.5
         
     def set_nz_values(self, b):
-        RRP_size, IP_size, max_release = get_zone_params('N')
+        RRP_size, IP_size, max_release,ca_baseline = get_zone_params('N')
         self.RRP_slider.value = RRP_size
         self.IP_slider.value = IP_size
         self.max_release_slider.value =max_release
+        self.ca_baseline_slider.value = ca_baseline
         self.tau_decay_slider.value = 0.5
         
     def set_dz_values(self, b):
-        RRP_size, IP_size, max_release = get_zone_params('D')
+        RRP_size, IP_size, max_release, ca_baseline = get_zone_params('D')
         self.RRP_slider.value = RRP_size
         self.IP_slider.value = IP_size
         self.max_release_slider.value = max_release
+        self.ca_baseline_slider.value = ca_baseline
         self.tau_decay_slider.value = 0.5  
 
 
@@ -775,17 +793,19 @@ class Ribbon_Plot():
                                     freq = self.stim_freq_slider,
                                     tau_decay = self.tau_decay_slider,
                                     time_resolution_ms = self.time_resolution_ms_slider,
-                                    track_changes = self.trackplot_checkbox)
+                                    track_changes = self.trackplot_checkbox,
+                                    ca_baseline = self.ca_baseline_slider)
 
 
 
         # reshape layout. use the interactive function instead of interact
                 
-        self.grid = GridspecLayout(4, 3)
+        self.grid = GridspecLayout(5, 3)
         # ribbon 
         self.grid[0, 0] = plot_widgets.children[0]
         self.grid[1, 0] = plot_widgets.children[1]
         self.grid[2, 0] = plot_widgets.children[2]
+        self.grid[3, 0] = plot_widgets.children[7] # ca baseline
 
         # stimulus 
         self.grid[0, 1] = plot_widgets.children[3] 
@@ -793,14 +813,14 @@ class Ribbon_Plot():
         self.grid[2, 1] = widgets.Label(value="Frequency slider is only valid for certain stimuli.")
         
         # rest 
-        self.grid[0, 2] = plot_widgets.children[5]
-        self.grid[1, 2] = plot_widgets.children[6]
-        self.grid[2, 2] = plot_widgets.children[7]
+        self.grid[0, 2] = plot_widgets.children[5] # ca kernel
+        self.grid[2, 2] = plot_widgets.children[6] # time res
+        self.grid[3, 2] = plot_widgets.children[8] # track changes
         
         # set zones
-        self.grid[3, 0] = self.az_button
-        self.grid[3, 1] = self.nz_button
-        self.grid[3, 2] = self.dz_button
+        self.grid[4, 0] = self.az_button
+        self.grid[4, 1] = self.nz_button
+        self.grid[4, 2] = self.dz_button
         
         self.output = plot_widgets.children[-1]
         #display(widgets.VBox([grid,output,self.clearplot_button]))
