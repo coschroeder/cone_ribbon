@@ -76,7 +76,7 @@ def get_zone_params(zone):
         max_release = 0.65 # 2.0 = round(0.65*RRP_size)
     
     # TODO
-    ca_baseline = 0.3 #0.32
+    ca_baseline = 0.4 #0.32 +0.08 (shifted ca) = 
     return RRP_size, IP_size, max_release, ca_baseline
 
 # additional scaling of input stimulus 
@@ -659,7 +659,7 @@ class Ribbon_Plot():
         
         # simulate calcium concentration
         ca_concentration = ca_simulation(stimulus, tau_decay,dt=self.dt)
-        ca_concentration_norm = normalize_specific(ca_concentration, target_max=1) # target_max=0.4, target_min=-0.08
+        ca_concentration_norm = normalize_specific(ca_concentration, target_max=1, target_min=0) # target_max=0.4, target_min=-0.08
 
 
         # get all parameters
