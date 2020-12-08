@@ -567,7 +567,7 @@ class Ribbon_Plot():
          self.clearplot_button,
          self.ca_baseline_slider) = get_sliders()
         
-        
+        self.update = True
         self.plot_interactive_ribbon()
         
         '''
@@ -653,86 +653,86 @@ class Ribbon_Plot():
         
         
     def plot_ribbon(self, RRP_size, IP_size, max_release, stimulus_mode,freq,tau_decay,time_resolution_ms, ca_baseline, track_changes=False):
-        backend_ =  mpl.get_backend() 
-        mpl.use("Agg")  # Prevent showing stuff
-        self.dt = time_resolution_ms/1000 # change to sec
-        
-        # get stimulus
-        stimulus,t = get_stimulus_choice(stimulus_mode, freq,dt=self.dt)
-        
-        # simulate calcium concentration
-        ca_concentration = ca_simulation(stimulus, tau_decay,dt=self.dt)
-        ca_concentration_norm = normalize_specific(ca_concentration, target_max=1, target_min=0) # target_max=0.4, target_min=-0.08
+        if self.update:
+            backend_ =  mpl.get_backend() 
+            mpl.use("Agg")  # Prevent showing stuff
+            self.dt = time_resolution_ms/1000 # change to sec
+
+            # get stimulus
+            stimulus,t = get_stimulus_choice(stimulus_mode, freq,dt=self.dt)
+
+            # simulate calcium concentration
+            ca_concentration = ca_simulation(stimulus, tau_decay,dt=self.dt)
+            ca_concentration_norm = normalize_specific(ca_concentration, target_max=1, target_min=0) # target_max=0.4, target_min=-0.08
 
 
-        # get all parameters
-        params_standardized = get_all_params(RRP_size, IP_size, max_release,ca_baseline)
-        # run simulation
-        simulation = solve_ribbon_ode(ca_concentration_norm, *params_standardized, dt=self.dt)
+            # get all parameters
+            params_standardized = get_all_params(RRP_size, IP_size, max_release,ca_baseline)
+            # run simulation
+            simulation = solve_ribbon_ode(ca_concentration_norm, *params_standardized, dt=self.dt)
 
-        # plotting
-        sns.set_context('notebook')
-        
-        # set up figure
-        if not track_changes:
-            self.set_new_fig()
-            self.i=5
-        else:
-            if self.i>=5:
+            # plotting
+            sns.set_context('notebook')
+
+            # set up figure
+            if not track_changes:
                 self.set_new_fig()
-                self.i=0
-            self.i+=1
-        
-        # actual plotting:
-        # set color
-        norm = mpl.colors.Normalize(vmin=-3, vmax=5) # 7 values but use only 5
-        cmap = mpl.cm.ScalarMappable(norm=norm, cmap=mpl.cm.Blues)
-        cmap.set_array([])
-        color=cmap.to_rgba(self.i)
-        # simulation
-        self.fig1.axes[0].plot(t,simulation, color=color)
+                self.i=5
+            else:
+                if self.i>=5:
+                    self.set_new_fig()
+                    self.i=0
+                self.i+=1
 
-        # Ca 
-        self.fig1.axes[1].plot(t,ca_concentration, color=color)
-        
-        # stimulus
-        stimulus -= np.min(stimulus)
-        stimulus /= np.max(stimulus)
-        self.fig1.axes[2].plot(t,stimulus, color=color)
-        
-        
-        # plot zoom ins
-        xlims = (19.6,25.6)
-        # simulation
-        self.fig1.axes[3].plot(t,simulation, color=color)
-        self.fig1.axes[3].set_xlim(xlims)
-        
-        # Ca 
-        self.fig1.axes[4].plot(t,ca_concentration, color=color)
-        self.fig1.axes[4].set_xlim(xlims)
-        
-        # stimulus
-        self.fig1.axes[5].plot(t,stimulus, color=color)
-        self.fig1.axes[5].set_xlim(xlims)
-        
-        # plot ribbon schema
-        plot_ribbon_schema(self.fig1.axes[6],RRP_size,IP_size,titlesize=self.titlesize)
-        
-        # plot some text
-        self.fig1.axes[7].text(0,0.5, 'This is a simplified ribbon schema \nwhich assumes constant vesicle density \nat the ribbon. \nThis is not necessarily the case.')
-        self.fig1.axes[7].axis('off')
-        
-        
-        # plot Ca kernel
-        plot_ca_kernel(self.fig1.axes[8], tau_decay, self.titlesize)
-        
-        
-        mpl.use(backend_) # Reset backend    
-        
-        
-        display(self.fig1)
-        
-        #return fig1
+            # actual plotting:
+            # set color
+            norm = mpl.colors.Normalize(vmin=-3, vmax=5) # 7 values but use only 5
+            cmap = mpl.cm.ScalarMappable(norm=norm, cmap=mpl.cm.Blues)
+            cmap.set_array([])
+            color=cmap.to_rgba(self.i)
+            # simulation
+            self.fig1.axes[0].plot(t,simulation, color=color)
+
+            # Ca 
+            self.fig1.axes[1].plot(t,ca_concentration, color=color)
+
+            # stimulus
+            stimulus -= np.min(stimulus)
+            stimulus /= np.max(stimulus)
+            self.fig1.axes[2].plot(t,stimulus, color=color)
+
+
+            # plot zoom ins
+            xlims = (19.6,25.6)
+            # simulation
+            self.fig1.axes[3].plot(t,simulation, color=color)
+            self.fig1.axes[3].set_xlim(xlims)
+
+            # Ca 
+            self.fig1.axes[4].plot(t,ca_concentration, color=color)
+            self.fig1.axes[4].set_xlim(xlims)
+
+            # stimulus
+            self.fig1.axes[5].plot(t,stimulus, color=color)
+            self.fig1.axes[5].set_xlim(xlims)
+
+            # plot ribbon schema
+            plot_ribbon_schema(self.fig1.axes[6],RRP_size,IP_size,titlesize=self.titlesize)
+
+            # plot some text
+            self.fig1.axes[7].text(0,0.5, 'This is a simplified ribbon schema \nwhich assumes constant vesicle density \nat the ribbon. \nThis is not necessarily the case.')
+            self.fig1.axes[7].axis('off')
+
+
+            # plot Ca kernel
+            plot_ca_kernel(self.fig1.axes[8], tau_decay, self.titlesize)
+
+
+            mpl.use(backend_) # Reset backend  
+            display(self.fig1) 
+       
+        else:
+            pass
 
     def clearplot_button_click(self,b):
         backend_ =  mpl.get_backend() 
@@ -761,27 +761,37 @@ class Ribbon_Plot():
     # specify zone buttons
     def set_az_values(self, b):
         RRP_size, IP_size, max_release, ca_baseline = get_zone_params('AZ')
+        self.update=False
         self.RRP_slider.value = RRP_size
         self.IP_slider.value = IP_size
         self.max_release_slider.value = max_release
         self.ca_baseline_slider.value = ca_baseline
+        self.tau_decay_slider.value = 0.001
+        self.update=True
         self.tau_decay_slider.value = 0.45
         
         
     def set_nz_values(self, b):
         RRP_size, IP_size, max_release,ca_baseline = get_zone_params('N')
+        self.update=False
         self.RRP_slider.value = RRP_size
         self.IP_slider.value = IP_size
         self.max_release_slider.value =max_release
         self.ca_baseline_slider.value = ca_baseline
+        self.tau_decay_slider.value = 0.001
+        self.update=True
         self.tau_decay_slider.value = 0.45
         
     def set_dz_values(self, b):
         RRP_size, IP_size, max_release, ca_baseline = get_zone_params('D')
+        self.update=False
+
         self.RRP_slider.value = RRP_size
         self.IP_slider.value = IP_size
         self.max_release_slider.value = max_release
         self.ca_baseline_slider.value = ca_baseline
+        self.tau_decay_slider.value = 0.001
+        self.update=True
         self.tau_decay_slider.value = 0.45  
 
 
