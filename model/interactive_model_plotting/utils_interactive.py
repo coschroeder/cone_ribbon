@@ -60,23 +60,26 @@ def get_zone_params(zone):
     """
     for zone fits (mean of distributions)
     zone in ['AZ','N','D']
-    returns: unnormalized params for RRP_size, IP_size, max_release
+    returns: unnormalized params for RRP_size, IP_size, max_release, ca_baseline
     """
     if zone=='AZ':
         RRP_size = 5 # rounded(4.9)
         IP_size = 7.8 # rounded(7.7)
         max_release = 0.55 # 2.6 = round(0.55*RRP_size)
+        ca_baseline = 0.2 #0.32 +0.08 (shifted ca) 
+
     elif zone=='N':
         RRP_size = 1.0 # rounded(1.04)
         IP_size = 10.8 # rounded(10.72)
         max_release = 0.95  # 10.1 = round(0.95*RRP_size)
+        ca_baseline = 0.5 #0.32 +0.08 (shifted ca) 
+
     elif zone=='D':
         RRP_size = 3 #rounded(2.9) 
         IP_size = 7 # rounded(7.08) 
         max_release = 0.65 # 2.0 = round(0.65*RRP_size)
-    
-    # TODO
-    ca_baseline = 0.4 #0.32 +0.08 (shifted ca) = 
+        ca_baseline = 0.25 #0.32 +0.08 (shifted ca) 
+        
     return RRP_size, IP_size, max_release, ca_baseline
 
 # additional scaling of input stimulus 
@@ -127,7 +130,7 @@ def ca_to_ca_kernel(tau_decay , dt=0.032):
     return kernel/np.sum(kernel), t
 
 
-def ca_simulation(stimulus_raw, tau_decay, dt=0.032):
+def ca_simulation(stimulus_raw, tau_decay,  dt=0.032):
     
     # add tpts for more stable convolution
     tpts_to_add = int(5/dt) #corresponding to 5 sec
@@ -140,7 +143,7 @@ def ca_simulation(stimulus_raw, tau_decay, dt=0.032):
     # process "receptore impulse response"
     ca1 = np.convolve(ca_kernel1, stimulus,mode='full')[:len(stimulus)]
     # non-linearity
-    ca1= np.exp(2*ca1)
+    ca1= np.exp(3*ca1)
     
     # ca current to ca concentration
     ca2 = np.convolve(ca_kernel2, ca1,mode='full')[:len(stimulus)]
@@ -762,7 +765,8 @@ class Ribbon_Plot():
         self.IP_slider.value = IP_size
         self.max_release_slider.value = max_release
         self.ca_baseline_slider.value = ca_baseline
-        self.tau_decay_slider.value = 0.5
+        self.tau_decay_slider.value = 0.45
+        
         
     def set_nz_values(self, b):
         RRP_size, IP_size, max_release,ca_baseline = get_zone_params('N')
@@ -770,7 +774,7 @@ class Ribbon_Plot():
         self.IP_slider.value = IP_size
         self.max_release_slider.value =max_release
         self.ca_baseline_slider.value = ca_baseline
-        self.tau_decay_slider.value = 0.5
+        self.tau_decay_slider.value = 0.45
         
     def set_dz_values(self, b):
         RRP_size, IP_size, max_release, ca_baseline = get_zone_params('D')
@@ -778,7 +782,7 @@ class Ribbon_Plot():
         self.IP_slider.value = IP_size
         self.max_release_slider.value = max_release
         self.ca_baseline_slider.value = ca_baseline
-        self.tau_decay_slider.value = 0.5  
+        self.tau_decay_slider.value = 0.45  
 
 
     def plot_interactive_ribbon(self):
