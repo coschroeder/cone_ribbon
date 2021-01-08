@@ -170,7 +170,7 @@ def solve_ribbon_ode(Ca_raw, J_RP_IP_max_pR, J_IP_RRP_max_pR, J_RRP_pR, k, x_hal
     Ca_raw: signal with appropriate dt 
     ribbon_parameters: the max.-changing parameters are should be given in unit: 1/sec
     ---
-    returns:  Jexo (with dt = 32ms) (optional output of ODE-solver)
+    returns:  Jexo (with dt = dt) (optional output of ODE-solver)
     """
     # time parameters
     #dt=0.032

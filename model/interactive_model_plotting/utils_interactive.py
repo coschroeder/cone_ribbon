@@ -306,7 +306,7 @@ def get_sliders():
                                       min=-0.2,
                                       max=1.3,
                                     step=0.05,
-                                    description='Ca activation baseline [a.u.]:',
+                                    description='Ca offset [a.u.]:',
                                     disabled=False,
                                     continuous_update=False,
                                             style=style)
@@ -567,7 +567,7 @@ class Ribbon_Plot():
          self.clearplot_button,
          self.ca_baseline_slider) = get_sliders()
         
-        self.update = True
+        self.update = True # controls if figure is updated or not
         self.plot_interactive_ribbon()
         
         '''
@@ -653,6 +653,7 @@ class Ribbon_Plot():
         
         
     def plot_ribbon(self, RRP_size, IP_size, max_release, stimulus_mode,freq,tau_decay,time_resolution_ms, ca_baseline, track_changes=False):
+        
         if self.update:
             backend_ =  mpl.get_backend() 
             mpl.use("Agg")  # Prevent showing stuff
@@ -663,7 +664,7 @@ class Ribbon_Plot():
 
             # simulate calcium concentration
             ca_concentration = ca_simulation(stimulus, tau_decay,dt=self.dt)
-            ca_concentration_norm = normalize_specific(ca_concentration, target_max=1, target_min=0) # target_max=0.4, target_min=-0.08
+            ca_concentration_norm = normalize_specific(ca_concentration, target_max=1, target_min=0) 
 
 
             # get all parameters
@@ -730,7 +731,8 @@ class Ribbon_Plot():
 
             mpl.use(backend_) # Reset backend  
             display(self.fig1) 
-       
+        
+        # this is used for setting the zone buttons. only one plotting event for multiple slider changes
         else:
             pass
 
@@ -766,7 +768,7 @@ class Ribbon_Plot():
         self.IP_slider.value = IP_size
         self.max_release_slider.value = max_release
         self.ca_baseline_slider.value = ca_baseline
-        self.tau_decay_slider.value = 0.001
+        self.tau_decay_slider.value = 0.001 # hack to make sure that there is a slider change for the last slider update
         self.update=True
         self.tau_decay_slider.value = 0.45
         
@@ -778,7 +780,7 @@ class Ribbon_Plot():
         self.IP_slider.value = IP_size
         self.max_release_slider.value =max_release
         self.ca_baseline_slider.value = ca_baseline
-        self.tau_decay_slider.value = 0.001
+        self.tau_decay_slider.value = 0.001 # hack to make sure that there is a slider change for the last slider update
         self.update=True
         self.tau_decay_slider.value = 0.45
         
@@ -790,7 +792,7 @@ class Ribbon_Plot():
         self.IP_slider.value = IP_size
         self.max_release_slider.value = max_release
         self.ca_baseline_slider.value = ca_baseline
-        self.tau_decay_slider.value = 0.001
+        self.tau_decay_slider.value = 0.001 # hack to make sure that there is a slider change for the last slider update
         self.update=True
         self.tau_decay_slider.value = 0.45  
 
