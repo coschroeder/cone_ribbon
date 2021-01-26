@@ -1,6 +1,6 @@
 # Interactive model for vesicle release at a ribbon synapse (in zebrafish UV cones)
 
-This is repository accompanies the paper TITEL, which can be found here: bioRxiv.
+This is repository accompanies the paper TITLE, which can be found here: bioRxiv.
 
 You can run the interactive model in google colab by clicking here:
 
