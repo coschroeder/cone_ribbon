@@ -797,7 +797,7 @@ class Ribbon_Plot():
         self.tau_decay_slider.value = 0.45  
 
 
-    def plot_interactive_ribbon(self):
+    def plot_interactive_ribbon(self, layout='h'):
        
         # create interactive plot
 
@@ -813,45 +813,77 @@ class Ribbon_Plot():
                                     ca_baseline = self.ca_baseline_slider)
 
 
+        if layout=='v':
+            # reshape layout. use the interactive function instead of interact
 
-        # reshape layout. use the interactive function instead of interact
-                
-        self.grid = GridspecLayout(5, 3)
-        # ribbon 
-        self.grid[0, 0] = plot_widgets.children[0]
-        self.grid[1, 0] = plot_widgets.children[1]
-        self.grid[2, 0] = plot_widgets.children[2]
-        self.grid[3, 0] = plot_widgets.children[7] # ca baseline
+            self.grid = GridspecLayout(5, 3)
+            # ribbon 
+            self.grid[0, 0] = plot_widgets.children[0]
+            self.grid[1, 0] = plot_widgets.children[1]
+            self.grid[2, 0] = plot_widgets.children[2]
+            self.grid[3, 0] = plot_widgets.children[7] # ca baseline
 
-        # stimulus 
-        self.grid[0, 1] = plot_widgets.children[3] 
-        self.grid[1, 1] = plot_widgets.children[4]
-        self.grid[2, 1] = widgets.Label(value="Frequency slider is only valid for certain stimuli.")
-        
-        # rest 
-        self.grid[0, 2] = plot_widgets.children[5] # ca kernel
-        self.grid[2, 2] = plot_widgets.children[6] # time res
-        self.grid[3, 2] = plot_widgets.children[8] # track changes
-        
-        # set zones
-        self.grid[4, 0] = self.az_button
-        self.grid[4, 1] = self.nz_button
-        self.grid[4, 2] = self.dz_button
-        
-        self.output = plot_widgets.children[-1]
-        #display(widgets.VBox([grid,output,self.clearplot_button]))
-        
+            # stimulus 
+            self.grid[0, 1] = plot_widgets.children[3] 
+            self.grid[1, 1] = plot_widgets.children[4]
+            self.grid[2, 1] = widgets.Label(value="Frequency slider is only valid for certain stimuli.")
 
-               
+            # rest 
+            self.grid[0, 2] = plot_widgets.children[5] # ca kernel
+            self.grid[2, 2] = plot_widgets.children[6] # time res
+            self.grid[3, 2] = plot_widgets.children[8] # track changes
+
+            # set zones
+            self.grid[4, 0] = self.az_button
+            self.grid[4, 1] = self.nz_button
+            self.grid[4, 2] = self.dz_button
+
+            self.output = plot_widgets.children[-1]
+        
+            output_boxed = widgets.VBox([self.grid,self.output,self.clearplot_button])
+            
+        elif layout=='h':
+            # reshape layout. use the interactive function instead of interact
+
+            self.grid = GridspecLayout(14, 1)
+            # ribbon 
+            self.grid[3, 0] = plot_widgets.children[0]
+            self.grid[4, 0] = plot_widgets.children[1]
+            self.grid[5, 0] = plot_widgets.children[2]
+            self.grid[6, 0] = plot_widgets.children[7] # ca baseline
+
+            # stimulus 
+            self.grid[0, 0] = plot_widgets.children[3] 
+            self.grid[1, 0] = plot_widgets.children[4]
+            self.grid[2, 0] = widgets.Label(value="Frequency slider is only valid for certain stimuli.")
+
+            # rest 
+            self.grid[7, 0] = plot_widgets.children[5] # ca kernel
+            self.grid[8, 0] = plot_widgets.children[6] # time res
+            self.grid[9, 0] = plot_widgets.children[8] # track changes
+
+            # set zones
+            self.grid[10, 0] = self.az_button
+            self.grid[11, 0] = self.nz_button
+            self.grid[12, 0] = self.dz_button
+            
+            # clear plot
+            self.grid[13, 0] = self.clearplot_button
+
+            self.output = plot_widgets.children[-1]
+        
+            output_boxed = widgets.HBox([self.grid,self.output])
+        
+        # set handelrs for buttons
         self.execute_button.on_click(self.execute_button_click)
         self.clearplot_button.on_click(self.clearplot_button_click)
-        
+
         # set handlers for zone buttons
         self.az_button.on_click(self.set_az_values)
         self.nz_button.on_click(self.set_nz_values)
         self.dz_button.on_click(self.set_dz_values)
-        
-        output_boxed = widgets.VBox([self.grid,self.output,self.clearplot_button])
+
+            
         display(output_boxed)
         
         return output_boxed
