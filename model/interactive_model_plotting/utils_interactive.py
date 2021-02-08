@@ -589,12 +589,12 @@ class Ribbon_Plot():
         
         
     def set_new_fig(self):
-        layout = (4,6) #nrows, ncolumns
+        layout = (5,6) #nrows, ncolumns
             
         self.fig1 = plt.figure(1, figsize=self.figsize)
         
         # ax0-2 simulation
-        ax0 = plt.subplot2grid(layout,(0,0), rowspan=2,colspan=4)
+        ax0 = plt.subplot2grid(layout,(0,0), rowspan=3,colspan=4)
         ylims_glut = (-0.1,5)
         self.fig1.add_axes(ax0)
         ax0.set_ylim(ylims_glut)
@@ -602,49 +602,49 @@ class Ribbon_Plot():
         ax0.set_ylabel('Glutamate Release Rate \n [ves.u./sec.]')
         ax0.set_title('Simulation of Vesicle Release', fontsize=self.titlesize)
 
-        ax1 = plt.subplot2grid(layout,(2,0), rowspan=1,colspan=4)
+        ax1 = plt.subplot2grid(layout,(3,0), rowspan=1,colspan=4)
         ax1.set_xticklabels([])
         ax1.set_ylabel('Ca Concentration \n [a.u.]')
         self.fig1.add_axes(ax1)
 
         
-        ax2 = plt.subplot2grid(layout,(3,0), rowspan=1,colspan=4)
+        ax2 = plt.subplot2grid(layout,(4,0), rowspan=1,colspan=4)
         self.fig1.add_axes(ax2)
         ax2.set_xlabel('sec')
         ax2.set_ylabel('Stimulus \n [normalized]')
         
         
         # for zoom in 
-        ax3 = plt.subplot2grid(layout,(0,4), rowspan=2,colspan=1)
+        ax3 = plt.subplot2grid(layout,(0,4), rowspan=3,colspan=1)
         ax3.set_title('Zoom in', fontsize=self.titlesize)
         ax3.set_ylim(ylims_glut)
         ax3.set_xticklabels([])
         ax3.set_yticklabels([])
 
         self.fig1.add_axes(ax3)
-        ax4 = plt.subplot2grid(layout,(2,4), rowspan=1,colspan=1)
+        ax4 = plt.subplot2grid(layout,(3,4), rowspan=1,colspan=1)
         ax4.set_xticklabels([])
         ax4.set_yticklabels([])
         
         self.fig1.add_axes(ax4)
-        ax5 = plt.subplot2grid(layout,(3,4), rowspan=1,colspan=1)
+        ax5 = plt.subplot2grid(layout,(4,4), rowspan=1,colspan=1)
         ax5.set_xlabel('sec')
         ax5.set_yticklabels([])
         self.fig1.add_axes(ax5)
         
         # ribbon comic
-        ax6 = plt.subplot2grid(layout,(0,5), rowspan=2,colspan=1)
+        ax6 = plt.subplot2grid(layout,(0,5), rowspan=3,colspan=1)
         #ax6.set_title('Ribbon schema', fontsize=self.titlesize)
         self.fig1.add_axes(ax6)
         #ax3.set_xlabel('sec')
         #ax3.set_ylabel('Stimulus \n [normalized]')
         
         # for text
-        ax7 = plt.subplot2grid(layout,(2,5), rowspan=1,colspan=1)
+        ax7 = plt.subplot2grid(layout,(3,5), rowspan=1,colspan=1)
         self.fig1.add_axes(ax7)
         
         # for Ca kernel
-        ax8 = plt.subplot2grid(layout,(3,5), rowspan=1,colspan=1)
+        ax8 = plt.subplot2grid(layout,(4,5), rowspan=1,colspan=1)
         self.fig1.add_axes(ax8)
         
         sns.despine()
@@ -721,7 +721,7 @@ class Ribbon_Plot():
             plot_ribbon_schema(self.fig1.axes[6],RRP_size,IP_size,titlesize=self.titlesize)
 
             # plot some text
-            self.fig1.axes[7].text(0,0.5, 'This is a simplified ribbon schema \nwhich assumes constant vesicle density \nat the ribbon. \nThis is not necessarily the case.')
+            self.fig1.axes[7].text(0,0, 'This is a simplified ribbon schema \nwhich assumes constant vesicle density \nat the ribbon. \nThis is not necessarily the case.')
             self.fig1.axes[7].axis('off')
 
 
