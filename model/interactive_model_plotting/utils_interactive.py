@@ -519,10 +519,10 @@ def plot_ribbon_schema(ax, n_RRP,n_IP, titlesize):
     ax.axhline(0, color='black',lw=3)
 
     # add text 
-    ax.text(-2,-0.3,'Membrane')
+    ax.text(-2,-0.5,'Membrane')
     ax.text(xy[0],height+0.5,'Ribbon',color=ribboncolor)
     ax.text(width+4*r,0.15,'RRP',color='grey')
-    ax.text(width+4*r,height+2*r,'IP',color='black')
+    ax.text(width+4*r,height+1*r,'IP',color='black')
 
     ax.axis('off')
     #return fig
@@ -601,17 +601,20 @@ class Ribbon_Plot():
         self.fig1.axes[0].set_xticklabels([])
         ax0.set_ylabel('Glutamate Release Rate \n [ves.u./sec.]')
         ax0.set_title('Simulation of Vesicle Release', fontsize=self.titlesize)
+        sns.despine(ax=ax0)
 
         ax1 = plt.subplot2grid(layout,(3,0), rowspan=1,colspan=4)
         ax1.set_xticklabels([])
         ax1.set_ylabel('Ca Concentration \n [a.u.]')
         self.fig1.add_axes(ax1)
+        sns.despine(ax=ax1)
 
         
         ax2 = plt.subplot2grid(layout,(4,0), rowspan=1,colspan=4)
         self.fig1.add_axes(ax2)
         ax2.set_xlabel('sec')
         ax2.set_ylabel('Stimulus \n [normalized]')
+        sns.despine(ax=ax2)
         
         
         # for zoom in 
@@ -620,17 +623,25 @@ class Ribbon_Plot():
         ax3.set_ylim(ylims_glut)
         ax3.set_xticklabels([])
         ax3.set_yticklabels([])
+        ax3.set_yticks([])
+        sns.despine(ax=ax3,left=True)
 
         self.fig1.add_axes(ax3)
         ax4 = plt.subplot2grid(layout,(3,4), rowspan=1,colspan=1)
         ax4.set_xticklabels([])
         ax4.set_yticklabels([])
+        ax4.set_yticks([])
+        sns.despine(ax=ax4, left=True)
+
         
         self.fig1.add_axes(ax4)
         ax5 = plt.subplot2grid(layout,(4,4), rowspan=1,colspan=1)
         ax5.set_xlabel('sec')
         ax5.set_yticklabels([])
+        ax5.set_yticks([])
         self.fig1.add_axes(ax5)
+        sns.despine(ax=ax5,left=True)
+
         
         # ribbon comic
         ax6 = plt.subplot2grid(layout,(0,5), rowspan=2,colspan=1)
@@ -646,8 +657,10 @@ class Ribbon_Plot():
         # for Ca kernel
         ax8 = plt.subplot2grid(layout,(4,5), rowspan=1,colspan=1)
         self.fig1.add_axes(ax8)
+        sns.despine(ax=ax8)
+
         
-        sns.despine()
+        #sns.despine()
         plt.tight_layout()        
         
         
@@ -704,7 +717,7 @@ class Ribbon_Plot():
 
 
             # plot zoom ins
-            xlims = (19.6,25.6)
+            xlims = (19.4,25.6)# (19.6,25.6)
             # simulation
             self.fig1.axes[3].plot(t,simulation, color=color)
             self.fig1.axes[3].set_xlim(xlims)
