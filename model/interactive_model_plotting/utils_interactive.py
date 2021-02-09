@@ -633,14 +633,14 @@ class Ribbon_Plot():
         self.fig1.add_axes(ax5)
         
         # ribbon comic
-        ax6 = plt.subplot2grid(layout,(0,5), rowspan=3,colspan=1)
+        ax6 = plt.subplot2grid(layout,(0,5), rowspan=2,colspan=1)
         #ax6.set_title('Ribbon schema', fontsize=self.titlesize)
         self.fig1.add_axes(ax6)
         #ax3.set_xlabel('sec')
         #ax3.set_ylabel('Stimulus \n [normalized]')
         
         # for text
-        ax7 = plt.subplot2grid(layout,(3,5), rowspan=1,colspan=1)
+        ax7 = plt.subplot2grid(layout,(2,5), rowspan=1,colspan=1)
         self.fig1.add_axes(ax7)
         
         # for Ca kernel
@@ -721,7 +721,7 @@ class Ribbon_Plot():
             plot_ribbon_schema(self.fig1.axes[6],RRP_size,IP_size,titlesize=self.titlesize)
 
             # plot some text
-            self.fig1.axes[7].text(0,0, 'This is a simplified ribbon schema \nwhich assumes constant vesicle density \nat the ribbon. \nThis is not necessarily the case.')
+            self.fig1.axes[7].text(0,-2, 'This is a simplified \nribbon schema \nwhich assumes constant \nvesicle density \nat the ribbon. \nThis is not necessarily \nthe case.')
             self.fig1.axes[7].axis('off')
 
 
