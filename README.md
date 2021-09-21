@@ -1,9 +1,7 @@
 # Distinct Synaptic Transfer Functions in Same-Type Photoreceptors
 
-This is repository accompanies the paper "Distinct Synaptic Transfer Functions in Same-Type Photoreceptors", a preprint can be found here: 
-
-https://www.biorxiv.org/content/10.1101/2021.02.24.432674v2
-
+This is repository accompanies the paper: C. Schröder, J. Oesterle, P. Berens, T. Yoshimatsu, T. Baden (2021) "Distinct Synaptic Transfer Functions in Same-Type Photoreceptors". Elife. 
+https://elifesciences.org/articles/67851.pdf
 
 ## EM_analysis
 
