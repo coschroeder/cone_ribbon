@@ -1,3 +1,7 @@
+[![DOI](https://zenodo.org/badge/314256777.svg)](https://zenodo.org/badge/latestdoi/314256777)
+
+
+
 # Distinct Synaptic Transfer Functions in Same-Type Photoreceptors
 
 This is repository accompanies the paper: C. Schröder, J. Oesterle, P. Berens, T. Yoshimatsu, T. Baden (2021) "Distinct Synaptic Transfer Functions in Same-Type Photoreceptors". Elife. 
